@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  etzhayyim メイン業務フロー: 案件受付 → 納品 → CEO最終承認
+  逆トポロジーソート順:
+    A(戦略方針) → B(案件受付) → C(契約締結) → D(案件ルーティング)
+    → E(Cyber評価)|F(ブランド戦略)|H(技術要件)
+    → G(Creative)|I(開発)
+    → J(CLO法務確認) → K(COO納品確認) → L(CEO最終承認)
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             targetNamespace="com.etzhayyim.apps.kaisya.bpmn"
+             id="etzhayyim-main-intake-delivery">
+
+  <collaboration id="etzhayyim-collab">
+    <participant id="pool-etzhayyim" name="Etzhayyimコジェイパン" processRef="proc-main-intake-delivery"/>
+  </collaboration>
+
+  <process id="proc-main-intake-delivery" name="etzhayyim メイン業務フロー" isExecutable="true">
+
+    <!-- ===== START ===== -->
+    <startEvent id="start" name="案件発生">
+      <outgoing>flow-start-to-strategy</outgoing>
+    </startEvent>
+
+    <!-- A: CEO 戦略方針確認 (UserTask → form: project-intake) -->
+    <userTask id="task-A-strategy" name="A: CEO 戦略方針確認"
+              camunda:assignee="j.kawasaki"
+              camunda:formKey="embedded:app:forms/project-intake.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="ceo"/>
+          <camunda:property name="did" value="did:web:kaisya.etzhayyim.com"/>
+          <camunda:property name="hc_worker" value="j.kawasaki"/>
+          <camunda:property name="form_task_nsid" value="com.etzhayyim.apps.kaisya.addNote"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-start-to-strategy</incoming>
+      <outgoing>flow-A-to-B</outgoing>
+    </userTask>
+
+    <!-- B: COO 案件受付 (UserTask → form: project-intake → 完了) -->
+    <userTask id="task-B-intake" name="B: COO 案件受付・スコープ確認"
+              camunda:assignee="a.nakamura"
+              camunda:formKey="embedded:app:forms/project-intake.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="coo"/>
+          <camunda:property name="hc_worker" value="a.nakamura"/>
+          <camunda:property name="vertex_form_task_type" value="intake"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-A-to-B</incoming>
+      <outgoing>flow-B-to-C</outgoing>
+    </userTask>
+
+    <!-- C: CLO 契約締結 (UserTask → form: contract-review) -->
+    <userTask id="task-C-contract" name="C: CLO 契約締結・法務確認"
+              camunda:assignee="k.bakshi"
+              camunda:formKey="embedded:app:forms/contract-review.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="clo"/>
+          <camunda:property name="hc_worker" value="k.bakshi"/>
+          <camunda:property name="vertex_form_task_type" value="contract-review"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-B-to-C</incoming>
+      <outgoing>flow-C-to-D</outgoing>
+    </userTask>
+
+    <!-- D: COO 案件ルーティング (BusinessRuleTask → DMN) -->
+    <businessRuleTask id="task-D-routing" name="D: DMN 案件ルーティング判定"
+                      camunda:decisionRef="dmn-task-routing"
+                      camunda:resultVariable="routingResult"
+                      camunda:mapDecisionResult="singleResult">
+      <incoming>flow-C-to-D</incoming>
+      <outgoing>flow-D-to-gateway</outgoing>
+    </businessRuleTask>
+
+    <!-- parallel gateway: Cyber | Branding | Tech -->
+    <parallelGateway id="gateway-parallel-split" name="並列タスク開始">
+      <incoming>flow-D-to-gateway</incoming>
+      <outgoing>flow-gw-to-E</outgoing>
+      <outgoing>flow-gw-to-F</outgoing>
+      <outgoing>flow-gw-to-H</outgoing>
+    </parallelGateway>
+
+    <!-- E: Cyber評価 (n.takahashi) → form: security-assessment -->
+    <userTask id="task-E-cyber" name="E: Cybersecurity評価"
+              camunda:assignee="n.takahashi"
+              camunda:formKey="embedded:app:forms/security-assessment.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="cybersecurity"/>
+          <camunda:property name="hc_worker" value="n.takahashi"/>
+          <camunda:property name="email" value="n.takahashi@etzhayyim.works"/>
+          <camunda:property name="vertex_form_task_type" value="security-assessment"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-gw-to-E</incoming>
+      <outgoing>flow-E-to-join</outgoing>
+    </userTask>
+
+    <!-- F: ブランド戦略 (t.ichihara) → form: creative-brief -->
+    <userTask id="task-F-brand" name="F: ブランド戦略策定"
+              camunda:assignee="t.ichihara"
+              camunda:formKey="embedded:app:forms/creative-brief.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="branding"/>
+          <camunda:property name="hc_worker" value="t.ichihara"/>
+          <camunda:property name="vertex_form_task_type" value="branding-strategy"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-gw-to-F</incoming>
+      <outgoing>flow-F-to-G</outgoing>
+    </userTask>
+
+    <!-- G: Creative (k.takahashi) → form: creative-brief -->
+    <userTask id="task-G-creative" name="G: クリエイティブディレクション"
+              camunda:assignee="k.takahashi"
+              camunda:formKey="embedded:app:forms/creative-brief.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="creative"/>
+          <camunda:property name="hc_worker" value="k.takahashi"/>
+          <camunda:property name="vertex_form_task_type" value="creative-direction"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-F-to-G</incoming>
+      <outgoing>flow-G-to-join</outgoing>
+    </userTask>
+
+    <!-- H: 技術要件 (t.chikada) → form: security-assessment -->
+    <userTask id="task-H-tech" name="H: 技術要件・CS部確認"
+              camunda:assignee="t.chikada"
+              camunda:formKey="embedded:app:forms/security-assessment.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="cs"/>
+          <camunda:property name="hc_worker" value="t.chikada"/>
+          <camunda:property name="vertex_form_task_type" value="tech-requirements"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-gw-to-H</incoming>
+      <outgoing>flow-H-to-I</outgoing>
+    </userTask>
+
+    <!-- I: 開発 (f.tanaka / y.nishino) → form: delivery-confirm -->
+    <userTask id="task-I-dev" name="I: 開発実装"
+              camunda:candidateUsers="f.tanaka,y.nishino"
+              camunda:formKey="embedded:app:forms/delivery-confirm.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="engineer"/>
+          <camunda:property name="vertex_form_task_type" value="development"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-H-to-I</incoming>
+      <outgoing>flow-I-to-join</outgoing>
+    </userTask>
+
+    <!-- parallel join -->
+    <parallelGateway id="gateway-parallel-join" name="並列タスク完了">
+      <incoming>flow-E-to-join</incoming>
+      <incoming>flow-G-to-join</incoming>
+      <incoming>flow-I-to-join</incoming>
+      <outgoing>flow-join-to-J</outgoing>
+    </parallelGateway>
+
+    <!-- J: CLO 法務最終確認 -->
+    <userTask id="task-J-legal-review" name="J: CLO 法務最終確認"
+              camunda:assignee="k.bakshi"
+              camunda:formKey="embedded:app:forms/contract-review.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="clo"/>
+          <camunda:property name="vertex_form_task_type" value="legal-final-review"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-join-to-J</incoming>
+      <outgoing>flow-J-to-K</outgoing>
+    </userTask>
+
+    <!-- K: COO 納品確認 -->
+    <userTask id="task-K-delivery" name="K: COO 納品確認"
+              camunda:assignee="a.nakamura"
+              camunda:formKey="embedded:app:forms/delivery-confirm.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="coo"/>
+          <camunda:property name="vertex_form_task_type" value="delivery-confirm"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-J-to-K</incoming>
+      <outgoing>flow-K-to-L</outgoing>
+    </userTask>
+
+    <!-- L: CEO 最終承認 -->
+    <userTask id="task-L-final-approval" name="L: CEO 最終承認"
+              camunda:assignee="j.kawasaki"
+              camunda:formKey="embedded:app:forms/final-approval.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="ceo"/>
+          <camunda:property name="vertex_form_task_type" value="final-approval"/>
+          <camunda:property name="mcp_tool" value="etzhayyim.actor.approveProcess"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-K-to-L</incoming>
+      <outgoing>flow-L-to-end</outgoing>
+    </userTask>
+
+    <!-- Notify Teams via ServiceTask (MCP) -->
+    <serviceTask id="task-notify-teams" name="Teams 完了通知 (MCP)"
+                 camunda:type="external"
+                 camunda:topic="etzhayyim.coworkGraph.teamsNotify">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="mcp_tool" value="etzhayyim.actor.sendTaskInvitation"/>
+          <camunda:property name="channel" value="GJ/CE/General"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-L-to-end</incoming>
+      <outgoing>flow-notify-to-end</outgoing>
+    </serviceTask>
+
+    <endEvent id="end" name="案件完了">
+      <incoming>flow-notify-to-end</incoming>
+    </endEvent>
+
+    <!-- Sequence Flows -->
+    <sequenceFlow id="flow-start-to-strategy" sourceRef="start" targetRef="task-A-strategy"/>
+    <sequenceFlow id="flow-A-to-B" sourceRef="task-A-strategy" targetRef="task-B-intake"/>
+    <sequenceFlow id="flow-B-to-C" sourceRef="task-B-intake" targetRef="task-C-contract"/>
+    <sequenceFlow id="flow-C-to-D" sourceRef="task-C-contract" targetRef="task-D-routing"/>
+    <sequenceFlow id="flow-D-to-gateway" sourceRef="task-D-routing" targetRef="gateway-parallel-split"/>
+    <sequenceFlow id="flow-gw-to-E" sourceRef="gateway-parallel-split" targetRef="task-E-cyber"/>
+    <sequenceFlow id="flow-gw-to-F" sourceRef="gateway-parallel-split" targetRef="task-F-brand"/>
+    <sequenceFlow id="flow-gw-to-H" sourceRef="gateway-parallel-split" targetRef="task-H-tech"/>
+    <sequenceFlow id="flow-E-to-join" sourceRef="task-E-cyber" targetRef="gateway-parallel-join"/>
+    <sequenceFlow id="flow-F-to-G" sourceRef="task-F-brand" targetRef="task-G-creative"/>
+    <sequenceFlow id="flow-G-to-join" sourceRef="task-G-creative" targetRef="gateway-parallel-join"/>
+    <sequenceFlow id="flow-H-to-I" sourceRef="task-H-tech" targetRef="task-I-dev"/>
+    <sequenceFlow id="flow-I-to-join" sourceRef="task-I-dev" targetRef="gateway-parallel-join"/>
+    <sequenceFlow id="flow-join-to-J" sourceRef="gateway-parallel-join" targetRef="task-J-legal-review"/>
+    <sequenceFlow id="flow-J-to-K" sourceRef="task-J-legal-review" targetRef="task-K-delivery"/>
+    <sequenceFlow id="flow-K-to-L" sourceRef="task-K-delivery" targetRef="task-L-final-approval"/>
+    <sequenceFlow id="flow-L-to-end" sourceRef="task-L-final-approval" targetRef="task-notify-teams"/>
+    <sequenceFlow id="flow-notify-to-end" sourceRef="task-notify-teams" targetRef="end"/>
+
+  </process>
+
+</definitions>

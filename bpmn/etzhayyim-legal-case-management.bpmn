@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  etzhayyim 法務案件管理フロー
+  担当: k.bakshi (CLO), y.nishino (CLO tier support)
+  対象: LingLing / 対鈴木 / 鹿児島大学 / 松岡 等
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+             targetNamespace="com.etzhayyim.apps.kaisya.bpmn"
+             id="etzhayyim-legal-case-management">
+
+  <process id="proc-legal-case" name="法務案件管理" isExecutable="true">
+
+    <startEvent id="start-legal" name="法務案件発生">
+      <outgoing>flow-sl-to-classify</outgoing>
+    </startEvent>
+
+    <!-- 案件分類 (BusinessRuleTask → DMN) -->
+    <businessRuleTask id="task-legal-classify" name="案件分類・リスク判定"
+                      camunda:decisionRef="dmn-risk-assessment"
+                      camunda:resultVariable="riskResult"
+                      camunda:mapDecisionResult="singleResult">
+      <incoming>flow-sl-to-classify</incoming>
+      <outgoing>flow-classify-to-gw</outgoing>
+    </businessRuleTask>
+
+    <!-- リスクレベル分岐 -->
+    <exclusiveGateway id="gw-risk-level" name="リスクレベル判定">
+      <incoming>flow-classify-to-gw</incoming>
+      <outgoing>flow-high-risk</outgoing>
+      <outgoing>flow-low-risk</outgoing>
+    </exclusiveGateway>
+
+    <!-- 高リスク: 訴訟対応 → form: legal-case -->
+    <userTask id="task-litigation" name="訴訟対応・証拠整理"
+              camunda:assignee="k.bakshi"
+              camunda:candidateUsers="y.nishino"
+              camunda:formKey="embedded:app:forms/legal-case.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="clo"/>
+          <camunda:property name="teams_channel" value="GJ/CE/Legal/{case_name}"/>
+          <camunda:property name="vertex_form_task_type" value="litigation"/>
+          <camunda:property name="mcp_tool" value="etzhayyim.actor.classifyDoc"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-high-risk</incoming>
+      <outgoing>flow-litigation-to-ceo</outgoing>
+    </userTask>
+
+    <!-- 低リスク: 通常対応 → form: contract-review -->
+    <userTask id="task-prelitigation" name="事前対応・通知準備"
+              camunda:assignee="k.bakshi"
+              camunda:formKey="embedded:app:forms/contract-review.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="clo"/>
+          <camunda:property name="vertex_form_task_type" value="pre-litigation"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-low-risk</incoming>
+      <outgoing>flow-pre-to-ceo</outgoing>
+    </userTask>
+
+    <!-- CEO 法務承認 -->
+    <userTask id="task-legal-ceo-approval" name="CEO 法務承認"
+              camunda:assignee="j.kawasaki"
+              camunda:formKey="embedded:app:forms/final-approval.form.json">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="role" value="ceo"/>
+          <camunda:property name="vertex_form_task_type" value="legal-ceo-approval"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-litigation-to-ceo</incoming>
+      <incoming>flow-pre-to-ceo</incoming>
+      <outgoing>flow-legal-ceo-to-notify</outgoing>
+    </userTask>
+
+    <!-- Teams 通知 -->
+    <serviceTask id="task-legal-teams-notify" name="Teams 法務チーム通知"
+                 camunda:type="external"
+                 camunda:topic="etzhayyim.coworkGraph.teamsNotify">
+      <extensionElements>
+        <camunda:properties>
+          <camunda:property name="channel" value="GJ/CE/Legal/2504-LingLing"/>
+        </camunda:properties>
+      </extensionElements>
+      <incoming>flow-legal-ceo-to-notify</incoming>
+      <outgoing>flow-legal-end</outgoing>
+    </serviceTask>
+
+    <endEvent id="end-legal" name="法務案件処理完了">
+      <incoming>flow-legal-end</incoming>
+    </endEvent>
+
+    <!-- Sequence Flows -->
+    <sequenceFlow id="flow-sl-to-classify" sourceRef="start-legal" targetRef="task-legal-classify"/>
+    <sequenceFlow id="flow-classify-to-gw" sourceRef="task-legal-classify" targetRef="gw-risk-level"/>
+    <sequenceFlow id="flow-high-risk" name="高リスク (訴訟)" sourceRef="gw-risk-level" targetRef="task-litigation">
+      <conditionExpression xsi:type="tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        ${riskResult.riskLevel == 'high'}
+      </conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow-low-risk" name="低リスク (事前)" sourceRef="gw-risk-level" targetRef="task-prelitigation">
+      <conditionExpression xsi:type="tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        ${riskResult.riskLevel != 'high'}
+      </conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow-litigation-to-ceo" sourceRef="task-litigation" targetRef="task-legal-ceo-approval"/>
+    <sequenceFlow id="flow-pre-to-ceo" sourceRef="task-prelitigation" targetRef="task-legal-ceo-approval"/>
+    <sequenceFlow id="flow-legal-ceo-to-notify" sourceRef="task-legal-ceo-approval" targetRef="task-legal-teams-notify"/>
+    <sequenceFlow id="flow-legal-end" sourceRef="task-legal-teams-notify" targetRef="end-legal"/>
+
+  </process>
+
+</definitions>

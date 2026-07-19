@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             targetNamespace="http://etzhayyim.ai/bpmn/yoro-growth"
+             id="etzhayyim-yoro-growth-flow">
+
+  <!--
+    etzhayyim × yoro.etzhayyim.com 事業成長フロー
+    逆トポロジーソート: L9(成長) ← L8(受注) ← L7(可視性) ← L6(成果) ← L5(完遂) ← L4(実行) ← L3(開始) ← L2(受付) ← L1(発掘)
+
+    各 UserTask 完了 → ServiceTask: Claude Cowork サマリー生成 → AT Repo 記録 → yoro フィード更新
+    「フォームを送信するだけで yoro に実績が積まれる」
+
+    Member DIDs:
+      CEO:           did:web:kaisya.etzhayyim.com:member:j-kawasaki
+      COO:           did:web:kaisya.etzhayyim.com:member:a-nakamura
+      CLO:           did:web:kaisya.etzhayyim.com:member:k-bakshi
+      Cybersecurity: did:web:kaisya.etzhayyim.com:member:n-takahashi
+      Branding:      did:web:kaisya.etzhayyim.com:member:t-ichihara
+      Creative:      did:web:kaisya.etzhayyim.com:member:k-takahashi
+      CS:            did:web:kaisya.etzhayyim.com:member:t-chikada
+      Engineer:      did:web:kaisya.etzhayyim.com:member:f-tanaka
+  -->
+
+  <!-- ═══════════════════════════════════════════════
+       L1: 機会発掘プール (yoro フィード監視)
+       ═══════════════════════════════════════════════ -->
+  <process id="yoro-growth-l1-opportunity" name="L1: 機会発掘" isExecutable="true">
+    <startEvent id="start-l1" name="市場シグナル検知">
+      <outgoing>flow-l1-to-ceo</outgoing>
+    </startEvent>
+
+    <userTask id="task-l1-ceo-scan" name="CEO: yoro フィード監視・業界動向把握"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:j-kawasaki"
+              camunda:formKey="embedded:app:forms/opportunity-scan.form.json">
+      <documentation>
+        Claude Cowork: 「今週 yoro のフィードで新しい繋がりは？業界の最新動向を要約して」
+        → yoro Discover タブ + Bluesky フィード集約
+        → 機会シグナルを AT Repo に記録
+      </documentation>
+      <incoming>flow-l1-to-ceo</incoming>
+      <outgoing>flow-l1-to-coo</outgoing>
+    </userTask>
+
+    <userTask id="task-l1-coo-intake-check" name="COO: 案件パイプライン確認"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:a-nakamura"
+              camunda:formKey="embedded:app:forms/project-intake.form.json">
+      <documentation>
+        Claude Cowork: 「今週の全案件の進捗を表にして」
+        → listMyFormTasks(role=coo, status=pending) でパイプライン確認
+      </documentation>
+      <incoming>flow-l1-to-coo</incoming>
+      <outgoing>flow-l1-to-record</outgoing>
+    </userTask>
+
+    <!-- yoro 可視化: 機会シグナルを AT Repo に記録 -->
+    <serviceTask id="task-l1-yoro-post" name="yoro: 機会シグナル AT 記録"
+                 camunda:type="external" camunda:topic="kaisya.recordGrowthContribution">
+      <documentation>
+        MCP: com.etzhayyim.apps.kaisya.recordGrowthContribution
+        collection: com.etzhayyim.apps.kaisya.opportunitySignal
+        → yoro derive rule で feed.post 自動生成
+      </documentation>
+      <incoming>flow-l1-to-record</incoming>
+      <outgoing>flow-l1-end</outgoing>
+    </serviceTask>
+
+    <endEvent id="end-l1" name="機会発掘完了 → L2 受付へ">
+      <incoming>flow-l1-end</incoming>
+    </endEvent>
+
+    <sequenceFlow id="flow-l1-to-ceo" sourceRef="start-l1" targetRef="task-l1-ceo-scan"/>
+    <sequenceFlow id="flow-l1-to-coo" sourceRef="task-l1-ceo-scan" targetRef="task-l1-coo-intake-check"/>
+    <sequenceFlow id="flow-l1-to-record" sourceRef="task-l1-coo-intake-check" targetRef="task-l1-yoro-post"/>
+    <sequenceFlow id="flow-l1-end" sourceRef="task-l1-yoro-post" targetRef="end-l1"/>
+  </process>
+
+  <!-- ═══════════════════════════════════════════════
+       L2–L9: メイン成長フロー
+       ═══════════════════════════════════════════════ -->
+  <process id="yoro-growth-main" name="etzhayyim × yoro 事業成長フロー L2–L9" isExecutable="true">
+
+    <!-- START: 案件受付 -->
+    <startEvent id="start-main" name="案件受付開始 (Teams: 業務開始)">
+      <outgoing>flow-start-to-a</outgoing>
+    </startEvent>
+
+    <!-- ─── L2: 案件受付・戦略方針 ─── -->
+    <parallelGateway id="gw-l2-split" name="CEO × COO 並列受付">
+      <incoming>flow-start-to-a</incoming>
+      <outgoing>flow-l2-to-ceo</outgoing>
+      <outgoing>flow-l2-to-coo</outgoing>
+    </parallelGateway>
+
+    <userTask id="task-step-a" name="Step A: CEO 戦略方針確認"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:j-kawasaki"
+              camunda:formKey="embedded:app:forms/project-intake.form.json">
+      <documentation>
+        Claude Cowork: 「project-intake フォームのStrategic Alignment 欄を書くのを手伝って」
+        → Claude が vertex_company_profile 参照して下書き作成
+        完了後: AT Repo 記録 → yoro に「案件戦略確定」投稿
+      </documentation>
+      <incoming>flow-l2-to-ceo</incoming>
+      <outgoing>flow-a-done</outgoing>
+    </userTask>
+
+    <userTask id="task-step-b" name="Step B: COO 案件受付"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:a-nakamura"
+              camunda:formKey="embedded:app:forms/project-intake.form.json">
+      <documentation>
+        Claude Cowork: 「project-intake フォームを開いて、案件情報を整理して」
+        完了後: AT Repo 記録 → yoro に「案件受付完了」投稿
+      </documentation>
+      <incoming>flow-l2-to-coo</incoming>
+      <outgoing>flow-b-done</outgoing>
+    </userTask>
+
+    <parallelGateway id="gw-l2-join" name="A + B 合流">
+      <incoming>flow-a-done</incoming>
+      <incoming>flow-b-done</incoming>
+      <outgoing>flow-l2-to-l3</outgoing>
+    </parallelGateway>
+
+    <!-- yoro: L2 成果を AT Repo 記録 -->
+    <serviceTask id="task-l2-yoro" name="yoro: 案件受付実績を AT 記録"
+                 camunda:type="external" camunda:topic="kaisya.recordGrowthContribution">
+      <incoming>flow-l2-to-l3</incoming>
+      <outgoing>flow-l2-yoro-done</outgoing>
+    </serviceTask>
+
+    <!-- ─── L3: プロセス開始 (DMN ルーティング) ─── -->
+    <businessRuleTask id="task-step-d" name="Step D: DMN 案件ルーティング"
+                      camunda:decisionRef="etzhayyim-task-routing"
+                      camunda:resultVariable="routingResult">
+      <documentation>
+        DMN: etzhayyim-task-routing.dmn
+        → hasLegalRisk → CLO k.bakshi
+        → hasCyberRisk → Cybersecurity n.takahashi
+        → hasBrandingNeed → Branding t.ichihara
+        → hasTechDev → Engineering f.tanaka
+      </documentation>
+      <incoming>flow-l2-yoro-done</incoming>
+      <outgoing>flow-d-to-c</outgoing>
+    </businessRuleTask>
+
+    <userTask id="task-step-c" name="Step C: CLO 契約締結"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:k-bakshi"
+              camunda:formKey="embedded:app:forms/contract-review.form.json">
+      <documentation>
+        Claude Cowork: 「LingLing 案件の ZeLo 7問への回答を下書きして」
+        → Claude が legal-case フォームデータ参照
+        完了後: AT Repo 記録 → yoro に「契約締結」投稿 (hash only, Tier 1)
+      </documentation>
+      <incoming>flow-d-to-c</incoming>
+      <outgoing>flow-c-to-parallel</outgoing>
+    </userTask>
+
+    <!-- ─── L4/L5/L6: 並列専門タスク ─── -->
+    <parallelGateway id="gw-parallel-split" name="専門タスク並列実行開始">
+      <incoming>flow-c-to-parallel</incoming>
+      <outgoing>flow-to-e</outgoing>
+      <outgoing>flow-to-f</outgoing>
+      <outgoing>flow-to-h</outgoing>
+    </parallelGateway>
+
+    <!-- Track 1: Cybersecurity (E) -->
+    <userTask id="task-step-e" name="Step E: Cybersecurity 評価 (n.takahashi)"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:n-takahashi"
+              camunda:formKey="embedded:app:forms/security-assessment.form.json">
+      <documentation>
+        Claude Cowork: 「Step E の security-assessment フォームを埋めるのを手伝って」
+        → threatLevel / affectedSystems / mitigationPlan 下書き生成
+        → MITRE ATT&amp;CK フレームワーク参照
+        完了後: AT Repo 記録 → yoro に「Cybersecurity 評価完了」投稿
+      </documentation>
+      <incoming>flow-to-e</incoming>
+      <outgoing>flow-e-done</outgoing>
+    </userTask>
+
+    <serviceTask id="task-e-yoro" name="yoro: Cybersecurity 実績 AT 記録"
+                 camunda:type="external" camunda:topic="kaisya.recordGrowthContribution">
+      <documentation>
+        collection: com.etzhayyim.apps.kaisya.securityReport
+        → yoro Cybersecurity 事業部実績ページに表示
+        → 社会的信頼証明 → Cybersecurity 事業売上向上
+      </documentation>
+      <incoming>flow-e-done</incoming>
+      <outgoing>flow-e-yoro-done</outgoing>
+    </serviceTask>
+
+    <!-- Track 2: Branding (F) → Creative (G) -->
+    <userTask id="task-step-f" name="Step F: Branding 戦略策定 (t.ichihara)"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:t-ichihara"
+              camunda:formKey="embedded:app:forms/creative-brief.form.json">
+      <documentation>
+        Claude Cowork: 「Step F の creative-brief フォームの Brand Strategy セクションを書いて」
+        → targetAudience / keyMessage 下書き支援
+        → 競合ブランド分析 (yoro Discover + web 検索)
+        完了後: AT Repo 記録 → yoro にブランドコンテンツ投稿 → 認知拡大
+      </documentation>
+      <incoming>flow-to-f</incoming>
+      <outgoing>flow-f-done</outgoing>
+    </userTask>
+
+    <userTask id="task-step-g" name="Step G: Creative Direction (k.takahashi) [F 完了後]"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:k-takahashi"
+              camunda:formKey="embedded:app:forms/creative-brief.form.json">
+      <documentation>
+        Claude Cowork: 「Step G の Creative Direction を t.ichihara の Brand Strategy に合わせて書いて」
+        → F の成果を参照した内容生成
+        完了後: AT Repo 記録 → yoro にクリエイティブポートフォリオ投稿
+      </documentation>
+      <incoming>flow-f-done</incoming>
+      <outgoing>flow-g-done</outgoing>
+    </userTask>
+
+    <serviceTask id="task-fg-yoro" name="yoro: Branding/Creative 実績 AT 記録"
+                 camunda:type="external" camunda:topic="kaisya.recordGrowthContribution">
+      <documentation>
+        collection: app.bsky.feed.post (Bluesky 互換)
+        → yoro クリエイティブポートフォリオ表示
+        → 案件引き合い増加
+      </documentation>
+      <incoming>flow-g-done</incoming>
+      <outgoing>flow-fg-yoro-done</outgoing>
+    </serviceTask>
+
+    <!-- Track 3: CS/Tech (H) → Engineering (I) -->
+    <userTask id="task-step-h" name="Step H: 技術要件定義 (t.chikada)"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:t-chikada"
+              camunda:formKey="embedded:app:forms/security-assessment.form.json">
+      <documentation>
+        Claude Cowork: 「Step H の security-assessment の Tech Requirements を書いて」
+        → affectedSystems / techRequirements セクション支援
+        完了後: AT Repo 記録 → yoro 技術ブログ記事
+      </documentation>
+      <incoming>flow-to-h</incoming>
+      <outgoing>flow-h-done</outgoing>
+    </userTask>
+
+    <userTask id="task-step-i" name="Step I: 開発実装 (f.tanaka / y.nishino) [H 完了後]"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:f-tanaka"
+              camunda:formKey="embedded:app:forms/delivery-confirm.form.json">
+      <documentation>
+        Claude Cowork: 「Step I の delivery-confirm フォームの Completed Items を書いて」
+        → 実装完了物の列挙支援
+        → sprint 完了タスクをリリースノートに自動生成
+        完了後: AT Repo 記録 → yoro エンジニアフィードにリリースノート
+      </documentation>
+      <incoming>flow-h-done</incoming>
+      <outgoing>flow-i-done</outgoing>
+    </userTask>
+
+    <serviceTask id="task-hi-yoro" name="yoro: Tech/Engineering 実績 AT 記録"
+                 camunda:type="external" camunda:topic="kaisya.recordGrowthContribution">
+      <documentation>
+        collection: com.etzhayyim.apps.kaisya.devRelease
+        → yoro エンジニアポートフォリオ表示
+        → 技術力証明 → エンジニアリング案件獲得
+      </documentation>
+      <incoming>flow-i-done</incoming>
+      <outgoing>flow-hi-yoro-done</outgoing>
+    </serviceTask>
+
+    <!-- ─── L5: 並列タスク JOIN ─── -->
+    <parallelGateway id="gw-parallel-join" name="E + G + I 合流 (全並列完了)">
+      <incoming>flow-e-yoro-done</incoming>
+      <incoming>flow-fg-yoro-done</incoming>
+      <incoming>flow-hi-yoro-done</incoming>
+      <outgoing>flow-parallel-to-j</outgoing>
+    </parallelGateway>
+
+    <!-- ─── L7: 法務最終確認 × 納品確認 ─── -->
+    <parallelGateway id="gw-l7-split" name="CLO × COO 並列最終確認">
+      <incoming>flow-parallel-to-j</incoming>
+      <outgoing>flow-to-j</outgoing>
+      <outgoing>flow-to-k</outgoing>
+    </parallelGateway>
+
+    <userTask id="task-step-j" name="Step J: CLO 法務最終確認 (k.bakshi)"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:k-bakshi"
+              camunda:formKey="embedded:app:forms/contract-review.form.json">
+      <documentation>
+        Claude Cowork: 「インド法務案件の自動ルーティングを確認して」
+        → com.etzhayyim.apps.lawfirm.createCase の autoRoute 結果確認
+        完了後: AT Repo 記録 → yoro 法務ナレッジ投稿 (hash only)
+      </documentation>
+      <incoming>flow-to-j</incoming>
+      <outgoing>flow-j-done</outgoing>
+    </userTask>
+
+    <userTask id="task-step-k" name="Step K: COO 納品確認 (a.nakamura)"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:a-nakamura"
+              camunda:formKey="embedded:app:forms/delivery-confirm.form.json">
+      <documentation>
+        Claude Cowork: 「この案件の全ステップの完了状況を確認して」
+        → listMyFormTasks(projectRef=processInstanceId, status=completed) で棚卸し
+        完了後: AT Repo 記録 → yoro に「納品完了」投稿
+      </documentation>
+      <incoming>flow-to-k</incoming>
+      <outgoing>flow-k-done</outgoing>
+    </userTask>
+
+    <parallelGateway id="gw-l7-join" name="J + K 合流">
+      <incoming>flow-j-done</incoming>
+      <incoming>flow-k-done</incoming>
+      <outgoing>flow-to-l</outgoing>
+    </parallelGateway>
+
+    <!-- ─── L8/L9: 最終承認 → 成長記録 ─── -->
+    <userTask id="task-step-l" name="Step L: CEO 最終承認 × 受注確定 (j.kawasaki)"
+              camunda:assignee="did:web:kaisya.etzhayyim.com:member:j-kawasaki"
+              camunda:formKey="embedded:app:forms/final-approval.form.json">
+      <documentation>
+        Claude Cowork: 「Step L の最終承認チェックリストを全項目確認して」
+        → checkLegal/checkDelivery/checkSecurity/checkCreative/checkDev を順に確認
+        → 提案書エグゼクティブサマリー生成
+        完了後: AT Repo 記録 → yoro に「案件完了・成約」投稿 → フォロワーへの社会的証明
+      </documentation>
+      <incoming>flow-to-l</incoming>
+      <outgoing>flow-l-decision</outgoing>
+    </userTask>
+
+    <exclusiveGateway id="gw-approval" name="承認判定">
+      <incoming>flow-l-decision</incoming>
+      <outgoing>flow-approved</outgoing>
+      <outgoing>flow-returned</outgoing>
+    </exclusiveGateway>
+
+    <!-- 承認 → L9 成長KPI記録 -->
+    <serviceTask id="task-l9-growth-kpi" name="L9: 事業成長 KPI AT 記録 (yoro ダッシュボード更新)"
+                 camunda:type="external" camunda:topic="kaisya.recordGrowthKpi">
+      <documentation>
+        MCP: com.etzhayyim.apps.kaisya.recordGrowthContribution
+        collection: com.etzhayyim.apps.kaisya.growthKpi
+        → 新規案件数 / 成約率 / MRR を AT Repo 記録
+        → yoro 社内ダッシュボードに四半期KPI表示
+        → 社外フォロワーへの成長実績投稿 → 次の顧客獲得サイクル開始
+
+        Claude Cowork でメンバー全員が確認:
+        「今月の事業成長KPIを確認して」
+        → com.etzhayyim.apps.kaisya.growthKpi AT Record 参照
+      </documentation>
+      <incoming>flow-approved</incoming>
+      <outgoing>flow-to-end</outgoing>
+    </serviceTask>
+
+    <!-- yoro: 成約実績を全チャンネルに通知 -->
+    <serviceTask id="task-l9-teams-notify" name="Teams: 成約完了通知 (kaisya-etzhayyim-bot)"
+                 camunda:type="external" camunda:topic="coworkGraph.sendTeamsMessage">
+      <documentation>
+        sendTeamsMessage → GJ/CE/General
+        メッセージ: 「案件 [projectName] 成約完了! 🎉 全メンバーの貢献: [summary]」
+        → 次の機会発掘サイクル (L1) へ
+      </documentation>
+      <incoming>flow-to-end</incoming>
+      <outgoing>flow-final-end</outgoing>
+    </serviceTask>
+
+    <endEvent id="end-growth" name="L9: 事業成長達成 → 次サイクルへ">
+      <incoming>flow-final-end</incoming>
+    </endEvent>
+
+    <!-- 差し戻し → Step B に戻る -->
+    <serviceTask id="task-return-notify" name="差し戻し通知 (Teams)"
+                 camunda:type="external" camunda:topic="coworkGraph.sendTeamsMessage">
+      <incoming>flow-returned</incoming>
+      <outgoing>flow-return-to-b</outgoing>
+    </serviceTask>
+
+    <!-- Sequence Flows -->
+    <sequenceFlow id="flow-start-to-a" sourceRef="start-main" targetRef="gw-l2-split"/>
+    <sequenceFlow id="flow-l2-to-ceo" sourceRef="gw-l2-split" targetRef="task-step-a"/>
+    <sequenceFlow id="flow-l2-to-coo" sourceRef="gw-l2-split" targetRef="task-step-b"/>
+    <sequenceFlow id="flow-a-done" sourceRef="task-step-a" targetRef="gw-l2-join"/>
+    <sequenceFlow id="flow-b-done" sourceRef="task-step-b" targetRef="gw-l2-join"/>
+    <sequenceFlow id="flow-l2-to-l3" sourceRef="gw-l2-join" targetRef="task-l2-yoro"/>
+    <sequenceFlow id="flow-l2-yoro-done" sourceRef="task-l2-yoro" targetRef="task-step-d"/>
+    <sequenceFlow id="flow-d-to-c" sourceRef="task-step-d" targetRef="task-step-c"/>
+    <sequenceFlow id="flow-c-to-parallel" sourceRef="task-step-c" targetRef="gw-parallel-split"/>
+    <sequenceFlow id="flow-to-e" sourceRef="gw-parallel-split" targetRef="task-step-e"/>
+    <sequenceFlow id="flow-to-f" sourceRef="gw-parallel-split" targetRef="task-step-f"/>
+    <sequenceFlow id="flow-to-h" sourceRef="gw-parallel-split" targetRef="task-step-h"/>
+    <sequenceFlow id="flow-e-done" sourceRef="task-step-e" targetRef="task-e-yoro"/>
+    <sequenceFlow id="flow-e-yoro-done" sourceRef="task-e-yoro" targetRef="gw-parallel-join"/>
+    <sequenceFlow id="flow-f-done" sourceRef="task-step-f" targetRef="task-step-g"/>
+    <sequenceFlow id="flow-g-done" sourceRef="task-step-g" targetRef="task-fg-yoro"/>
+    <sequenceFlow id="flow-fg-yoro-done" sourceRef="task-fg-yoro" targetRef="gw-parallel-join"/>
+    <sequenceFlow id="flow-h-done" sourceRef="task-step-h" targetRef="task-step-i"/>
+    <sequenceFlow id="flow-i-done" sourceRef="task-step-i" targetRef="task-hi-yoro"/>
+    <sequenceFlow id="flow-hi-yoro-done" sourceRef="task-hi-yoro" targetRef="gw-parallel-join"/>
+    <sequenceFlow id="flow-parallel-to-j" sourceRef="gw-parallel-join" targetRef="gw-l7-split"/>
+    <sequenceFlow id="flow-to-j" sourceRef="gw-l7-split" targetRef="task-step-j"/>
+    <sequenceFlow id="flow-to-k" sourceRef="gw-l7-split" targetRef="task-step-k"/>
+    <sequenceFlow id="flow-j-done" sourceRef="task-step-j" targetRef="gw-l7-join"/>
+    <sequenceFlow id="flow-k-done" sourceRef="task-step-k" targetRef="gw-l7-join"/>
+    <sequenceFlow id="flow-to-l" sourceRef="gw-l7-join" targetRef="task-step-l"/>
+    <sequenceFlow id="flow-l-decision" sourceRef="task-step-l" targetRef="gw-approval"/>
+    <sequenceFlow id="flow-approved" name="承認" sourceRef="gw-approval" targetRef="task-l9-growth-kpi">
+      <conditionExpression xsi:type="tFormalExpression">${approvalDecision == 'approved'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow-returned" name="差し戻し" sourceRef="gw-approval" targetRef="task-return-notify">
+      <conditionExpression xsi:type="tFormalExpression">${approvalDecision == 'returned'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow-to-end" sourceRef="task-l9-growth-kpi" targetRef="task-l9-teams-notify"/>
+    <sequenceFlow id="flow-final-end" sourceRef="task-l9-teams-notify" targetRef="end-growth"/>
+    <sequenceFlow id="flow-return-to-b" sourceRef="task-return-notify" targetRef="task-step-b"/>
+  </process>
+
+</definitions>
