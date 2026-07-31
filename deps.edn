@@ -1,0 +1,59 @@
+{:paths ["src" "resources"]
+
+ ;; The kotoba-ui stack is this repository's only runtime dependency, and it is
+ ;; the whole reason the portal exists as code rather than as a screenshot: the
+ ;; office console (`cloud-itonami/lawfirm`) and this portal render from the
+ ;; same design system, so a 弁護士 moving between them is not learning two
+ ;; products.
+ ;;
+ ;; shitsuke / liquid-glass-ui / css / html are declared at the top level on
+ ;; purpose — kotoba-ui's own deps.edn references them by `:local/root` for
+ ;; sibling-checkout development, which does not resolve for a git consumer.
+ ;; Top-level coordinates win over transitive ones.
+ :deps {io.github.kotoba-lang/kotoba-ui
+        {:git/url "https://github.com/kotoba-lang/kotoba-ui.git"
+         :git/sha "4167b3aa911690368bb47b61e825c47d3327bfac"}
+        io.github.kotoba-lang/appkit
+        {:git/url "https://github.com/kotoba-lang/appkit.git"
+         :git/sha "03b1c5373817229060f3fac9e41e97775c320997"}
+        io.github.kotoba-lang/shitsuke
+        {:git/url "https://github.com/kotoba-lang/shitsuke.git"
+         :git/sha "8820801bbf52d47a31be9521a193f9bc5359a39e"}
+        io.github.kotoba-lang/liquid-glass-ui
+        {:git/url "https://github.com/kotoba-lang/liquid-glass-ui.git"
+         :git/sha "8bb2c4fa10c06e638e38e55bff1b7f36830f2766"}
+        io.github.kotoba-lang/css
+        {:git/url "https://github.com/kotoba-lang/css.git"
+         :git/sha "7fc8167c4fb97a92b7c21545e6a92a86cc58a9ca"}
+        io.github.kotoba-lang/html
+        {:git/url "https://github.com/kotoba-lang/html.git"
+         :git/sha "04606d97309fa377a20d18ee123e5db8f59ad127"}}
+
+ :aliases
+ {;; clj-kondo from deps (no binary); errors fail.
+  :lint {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
+         :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test" "--fail-level" "error"]}
+
+  :test {:extra-paths ["test"]
+         :extra-deps {io.github.cognitect-labs/test-runner
+                      {:git/tag "v0.5.1" :git/sha "dfb30dd"}
+                      ;; Test-time only, and deliberately so. The portal must
+                      ;; not depend on a practice at runtime — it renders plain
+                      ;; data and any practice actor can supply it. But a
+                      ;; contract nobody checks is a comment, so the suite
+                      ;; asserts that what `lawfirm.projection/practice-summary`
+                      ;; actually emits satisfies `kaisya.contract`.
+                      io.github.cloud-itonami/lawfirm
+                      {:git/url "https://github.com/cloud-itonami/lawfirm.git"
+                       :git/sha "eb816888680868edb319446e3c37953a808e6a7b"}
+                      io.github.kotoba-lang/design-quality
+                      {:git/url "https://github.com/kotoba-lang/design-quality.git"
+                       :git/sha "fb766e2f79c088de05e289554c9de049e7909bd3"}}
+         :main-opts ["-m" "cognitect.test-runner"]}
+
+  ;; clojure -M:emit-processes -> resources/kaisya/processes.edn
+  ;; Generated from bpmn/*.bpmn. Never hand-edited.
+  :emit-processes {:main-opts ["-m" "kaisya.bpmn"]}
+
+  ;; clojure -M:render-console [out-file] -> docs/samples/kaisya-console.html
+  :render-console {:main-opts ["-m" "kaisya.render-console"]}}}
