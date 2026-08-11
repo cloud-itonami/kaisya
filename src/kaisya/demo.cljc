@@ -111,6 +111,24 @@
               {:name "予定" :description "組織の予定と空き時間を調整します。"
                :status :ready}]})
 
+(def public-setup
+  "The public host is an entry, not a second identity authority. It hands the
+  domain to the resident app where the Passkey session and Organization ledger
+  already live; the review fixture above keeps exercising the issued-record
+  state independently."
+  (-> setup
+      (assoc :organization {:name "あなたの会社" :slug "未設定"}
+             :handoff-url "http://localhost:1338/#settings"
+             :steps [{:number 1 :label "Organization" :detail "会社名と owner"
+                      :status :current}
+                     {:number 2 :label "ドメイン" :detail "DNS で所有権を確認"
+                      :status :blocked}
+                     {:number 3 :label "メンバー" :detail "招待と所属を管理"
+                      :status :blocked}
+                     {:number 4 :label "仕事道具" :detail "メール・文書・予定を接続"
+                      :status :blocked}])
+      (assoc :domain-verification {:status :not-started :domain ""})))
+
 (comment
   ;; The fixture must satisfy the contract it claims to demonstrate.
   (contract/valid? summary))

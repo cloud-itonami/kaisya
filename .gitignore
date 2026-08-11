@@ -2,3 +2,6 @@
 .clj-kondo/.cache/
 target/
 .DS_Store
+node_modules/
+dist/
+.wrangler/

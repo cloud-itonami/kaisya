@@ -55,5 +55,6 @@
   ;; Generated from bpmn/*.bpmn. Never hand-edited.
   :emit-processes {:main-opts ["-m" "kaisya.bpmn"]}
 
+  ;; Also emits public/index.html, the deployed setup entry.
   ;; clojure -M:render-console [out-file] -> docs/samples/kaisya-console.html
   :render-console {:main-opts ["-m" "kaisya.render-console"]}}}

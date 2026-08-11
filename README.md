@@ -11,12 +11,15 @@ HIG/WCAG 監査で **100.00 / 100**。
 
 - 生成済みポータル: [`docs/samples/kaisya-console.html`](docs/samples/kaisya-console.html)
 - Organization セットアップ状態: [`docs/samples/kaisya-setup.html`](docs/samples/kaisya-setup.html)
+- 公開入口: [`public/index.html`](public/index.html) → `kaisya.itonami.cloud`
 
 `kaisya.itonami.cloud` は同じ1ページの中で、未設定時は Organization →
 ドメイン確認 → メンバー → 仕事道具の順に案内し、完了後は会社ポータルを表示する。
 ドメイン確認の authority は `cloud-itonami-app` が持ち、この repo は発行済みの
 TXT challenge と確認状態を描画するだけ。Domain Connect は DNS provider の自動設定を
 足す任意レイヤーであり、手動 TXT 確認を置き換える信頼根ではない。
+公開入口は会社ドメインを resident app の `http://localhost:1338/#settings` へ渡す。
+Cloudflare 側に別のUser、Passkey、Organization台帳を作らない。
 
 ---
 
