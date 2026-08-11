@@ -85,6 +85,32 @@
   exercised by something rather than asserted about in the abstract."
   (update summary :totals dissoc :stale-channels))
 
+(def setup
+  "Host-owned onboarding projection. The sample challenge is static so the
+  rendered review artifact remains byte-identical across runs."
+  {:organization {:name "Etzhayyim" :slug "etzhayyim"}
+   :steps [{:number 1 :label "Organization" :detail "会社名と owner"
+            :status :complete}
+           {:number 2 :label "ドメイン" :detail "DNS で所有権を確認"
+            :status :current}
+           {:number 3 :label "メンバー" :detail "招待と所属を管理"
+            :status :blocked}
+           {:number 4 :label "仕事道具" :detail "メール・文書・予定を接続"
+            :status :blocked}]
+   :domain-verification
+   {:status :pending
+    :domain "etzhayyim.com"
+    :record-type "TXT"
+    :record-name "_itonami-verification.etzhayyim.com"
+    :record-value "itonami-domain-verification=sample-review-token"
+    :expires-at "2026-08-12T00:00:00Z"}
+   :services [{:name "メール" :description "会社の受信箱と送信元を組織に結び付けます。"
+               :status :domain-required}
+              {:name "Drive" :description "文書・表・フォームを会社の境界内で共有します。"
+               :status :ready}
+              {:name "予定" :description "組織の予定と空き時間を調整します。"
+               :status :ready}]})
+
 (comment
   ;; The fixture must satisfy the contract it claims to demonstrate.
   (contract/valid? summary))

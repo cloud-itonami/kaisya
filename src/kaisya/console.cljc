@@ -210,6 +210,99 @@
     "手で書き写すと図を編集した瞬間に静かにずれます。"]))
 
 ;; ---------------------------------------------------------------------------
+;; Organization setup
+;; ---------------------------------------------------------------------------
+
+(defn setup-view
+  "Workspace-style organization onboarding.
+
+  This still computes nothing. `setup` is a host-owned projection containing
+  the exact step states and DNS challenge issued by cloud-itonami-app. The
+  portal never decides that a TXT record is valid and never promotes a tenant;
+  its controls emit acts for the host to handle."
+  [{:keys [organization steps domain-verification services]}]
+  (ui/app-shell
+   {:nav (ui/nav-bar "Cloud Itonami"
+                     {:trailing [(ui/badge "Owner · Passkey")
+                                 (ui/button "会社ポータル"
+                                            {:act :open-console
+                                             :variant :text})]})}
+   (ui/hero
+    {:title "会社の仕事場をつくる"
+     :tagline (str (:name organization)
+                   " のドメイン・メンバー・仕事道具を、ひとつずつ確認します。")})
+   (ui/section
+    {:title "セットアップ" :wide true :id "setup"}
+    (ui/grid
+     {:min "280px"}
+     (app/panel
+      [(ui/list-view
+        (for [{:keys [number label detail status]} steps]
+          (ui/list-row
+           [:span [:strong (str number ". " label)]
+            [:span {:class "hig-caption1 ks-muted"} detail]]
+           {:trailing (ui/badge (case status
+                                  :complete "完了"
+                                  :current "設定中"
+                                  :blocked "待機"
+                                  "未着手"))})))])
+     (app/panel
+      [[:p {:class "hig-caption1 ks-muted"} "現在の Organization"]
+       [:h2 (:name organization)]
+       [:p (:slug organization)]
+       [:p {:class "hig-caption1 ks-muted"}
+        "Organization の切り替えと重要な設定変更は、Passkey で確認した人間の owner だけが行えます。"]])))
+   (ui/section
+    {:title "ドメインの所有権を確認" :wide true :id "domain-verification"}
+    (ui/stack
+     {:gap :4}
+     (app/panel
+      [[:h3 "会社で使うドメイン"]
+       [:p {:class "hig-callout"}
+        "確認済みドメインは、この Organization だけに結び付きます。確認前に、そのドメインの人を自動参加させることはありません。"]
+       [:label {:for "company-domain"} "ドメイン"]
+       (ui/text-field {:id "company-domain" :name "domain"
+                       :value (:domain domain-verification)
+                       :placeholder "example.co.jp"
+                       :autocomplete "url"
+                       :aria-label "会社ドメイン"})
+       (ui/stack
+        {:direction :horizontal :gap :3}
+        (ui/button "TXT レコードを発行"
+                   {:act :start-domain-verification :variant :solid-fill}))])
+     (when (:record-name domain-verification)
+       (app/panel
+        [[:h3 "DNS に TXT レコードを追加"]
+         [:p {:class "hig-callout"}
+          "DNS 管理画面で次の1件を追加してください。DNS の書き込み権限を Cloud Itonami に渡す必要はありません。"]
+         (ui/data-table
+          {:caption "ドメイン確認レコード"
+           :columns [{:key :type :label "種類"}
+                     {:key :name :label "ホスト名"}
+                     {:key :value :label "値"}]
+           :rows [{:type (:record-type domain-verification)
+                   :name [:code (:record-name domain-verification)]
+                   :value [:code (:record-value domain-verification)]}]})
+         [:p {:class "hig-caption1 ks-muted"}
+          (str "有効期限: " (:expires-at domain-verification)
+               "。反映には DNS provider により時間がかかることがあります。")]
+         (ui/stack
+          {:direction :horizontal :gap :3}
+          (ui/button "DNS を確認"
+                     {:act :verify-domain :variant :solid-fill})
+          (ui/button "後で行う" {:act :defer-domain-verification
+                                  :variant :text}))])))
+   (ui/section
+    {:title "利用する仕事道具" :wide true :id "services"}
+    (ui/grid
+     {:min "240px"}
+     (for [{:keys [name description status]} services]
+       (app/panel
+        [[:h3 name]
+         [:p {:class "hig-callout"} description]
+         (ui/badge (case status :ready "利用可能" :domain-required "ドメイン確認後" "準備中"))])))))))
+
+;; ---------------------------------------------------------------------------
 ;; Page
 ;; ---------------------------------------------------------------------------
 
@@ -223,22 +316,26 @@
 (defn view
   "The whole portal. `opts`: `:pending` (approval queue), `:processes`
   (generated BPMN definitions)."
-  [summary {:keys [pending processes] :as _opts}]
-  (ui/app-shell
-   {:nav (ui/nav-bar "会社ポータル"
-                     {:trailing [(ui/badge (or (:as-of summary) "基準日なし"))]})}
-   (gaps-view summary)
-   (totals-view summary)
-   (action-view summary)
-   (matters-view summary)
-   (approvals-view pending)
-   (processes-view processes)))
+  [summary {:keys [pending processes setup] :as _opts}]
+  (if setup
+    (setup-view setup)
+    (ui/app-shell
+     {:nav (ui/nav-bar "会社ポータル"
+                       {:trailing [(ui/badge (or (:as-of summary) "基準日なし"))]})}
+     (gaps-view summary)
+     (totals-view summary)
+     (action-view summary)
+     (matters-view summary)
+     (approvals-view pending)
+     (processes-view processes))))
 
 (defn render
   "Complete HTML document."
   [summary opts]
-  (ui/->page {:title "会社ポータル"
-              :description "事務所が何を抱えていて、何が既に問題になっているかを示す会社側の画面。"
+  (ui/->page {:title (if (:setup opts) "会社のセットアップ — Cloud Itonami" "会社ポータル")
+              :description (if (:setup opts)
+                             "会社のドメイン、メンバー、仕事道具を安全にセットアップする。"
+                             "事務所が何を抱えていて、何が既に問題になっているかを示す会社側の画面。")
               :lang "ja"
               :theme theme
               :head [[:style app-css]]}

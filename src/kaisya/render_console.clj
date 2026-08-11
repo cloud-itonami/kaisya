@@ -12,15 +12,24 @@
             [kaisya.demo :as demo]))
 
 (def default-out "docs/samples/kaisya-console.html")
+(def setup-out "docs/samples/kaisya-setup.html")
 
 (defn render []
   (console/render demo/summary
                   {:pending demo/pending
                    :processes (bpmn/checked-in)}))
 
-(defn -main [& [out]]
+(defn render-setup []
+  (console/render nil {:setup demo/setup}))
+
+(defn -main [& [out setup-path]]
   (let [out (or out default-out)
-        html (render)]
+        setup-path (or setup-path setup-out)
+        html (render)
+        setup-html (render-setup)]
     (io/make-parents out)
     (spit out html)
-    (println (str "wrote " out " (" (count html) " bytes)"))))
+    (io/make-parents setup-path)
+    (spit setup-path setup-html)
+    (println (str "wrote " out " (" (count html) " bytes)"))
+    (println (str "wrote " setup-path " (" (count setup-html) " bytes)"))))
