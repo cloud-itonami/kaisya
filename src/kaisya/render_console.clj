@@ -13,6 +13,7 @@
 
 (def default-out "docs/samples/kaisya-console.html")
 (def setup-out "docs/samples/kaisya-setup.html")
+(def site-out "public/index.html")
 
 (defn render []
   (console/render demo/summary
@@ -22,14 +23,21 @@
 (defn render-setup []
   (console/render nil {:setup demo/setup}))
 
+(defn render-site []
+  (console/render nil {:setup demo/public-setup}))
+
 (defn -main [& [out setup-path]]
   (let [out (or out default-out)
         setup-path (or setup-path setup-out)
         html (render)
-        setup-html (render-setup)]
+        setup-html (render-setup)
+        site-html (render-site)]
     (io/make-parents out)
     (spit out html)
     (io/make-parents setup-path)
     (spit setup-path setup-html)
+    (io/make-parents site-out)
+    (spit site-out site-html)
     (println (str "wrote " out " (" (count html) " bytes)"))
-    (println (str "wrote " setup-path " (" (count setup-html) " bytes)"))))
+    (println (str "wrote " setup-path " (" (count setup-html) " bytes)"))
+    (println (str "wrote " site-out " (" (count site-html) " bytes)"))))

@@ -220,13 +220,15 @@
   the exact step states and DNS challenge issued by cloud-itonami-app. The
   portal never decides that a TXT record is valid and never promotes a tenant;
   its controls emit acts for the host to handle."
-  [{:keys [organization steps domain-verification services]}]
+  [{:keys [organization steps domain-verification services handoff-url]}]
   (ui/app-shell
    {:nav (ui/nav-bar "Cloud Itonami"
-                     {:trailing [(ui/badge "Owner · Passkey")
+                     {:trailing [(ui/badge (if handoff-url "公開入口" "Owner · Passkey"))
                                  (ui/button "会社ポータル"
-                                            {:act :open-console
-                                             :variant :text})]})}
+                                            (cond-> {:act :open-console
+                                                     :variant :text}
+                                              handoff-url
+                                              (assoc :href handoff-url)))]})}
    (ui/hero
     {:title "会社の仕事場をつくる"
      :tagline (str (:name organization)
@@ -257,19 +259,31 @@
     (ui/stack
      {:gap :4}
      (app/panel
-      [[:h3 "会社で使うドメイン"]
-       [:p {:class "hig-callout"}
-        "確認済みドメインは、この Organization だけに結び付きます。確認前に、そのドメインの人を自動参加させることはありません。"]
-       [:label {:for "company-domain"} "ドメイン"]
-       (ui/text-field {:id "company-domain" :name "domain"
-                       :value (:domain domain-verification)
-                       :placeholder "example.co.jp"
-                       :autocomplete "url"
-                       :aria-label "会社ドメイン"})
-       (ui/stack
-        {:direction :horizontal :gap :3}
-        (ui/button "TXT レコードを発行"
-                   {:act :start-domain-verification :variant :solid-fill}))])
+      (let [intro [[:h3 "会社で使うドメイン"]
+                   [:p {:class "hig-callout"}
+                    "確認済みドメインは、この Organization だけに結び付きます。確認前に、そのドメインの人を自動参加させることはありません。"]]
+            field [[:label {:for "company-domain"} "ドメイン"]
+                   (ui/text-field {:id "company-domain"
+                                   :name (if handoff-url "setup-domain" "domain")
+                                   :value (:domain domain-verification)
+                                   :placeholder "example.co.jp"
+                                   :autocomplete "url"
+                                   :aria-label "会社ドメイン"})]]
+        (if handoff-url
+          (conj intro
+                (into [:form {:action handoff-url :method "get"}]
+                      (concat field
+                              [(ui/stack
+                                {:direction :horizontal :gap :3}
+                                (ui/button "この端末の Cloud Itonami で設定"
+                                           {:type "submit" :variant :solid-fill}))])))
+          (into intro
+                (concat field
+                        [(ui/stack
+                          {:direction :horizontal :gap :3}
+                          (ui/button "TXT レコードを発行"
+                                     {:act :start-domain-verification
+                                      :variant :solid-fill}))])))))
      (when (:record-name domain-verification)
        (app/panel
         [[:h3 "DNS に TXT レコードを追加"]

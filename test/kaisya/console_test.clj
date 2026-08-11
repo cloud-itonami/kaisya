@@ -80,6 +80,18 @@
     (is (not (str/includes? h "期限徒過"))
         "setup and console are states, not two screens rendered at once")))
 
+(deftest the-public-entry-hands-authority-to-the-resident-passkey-session
+  (let [h (render/render-site)]
+    (is (not (str/includes? h "kaisya.itonami.cloud"))
+        "the artifact is mount-independent and does not hard-code its own host")
+    (is (str/includes? h "http://localhost:1338/#settings"))
+    (is (str/includes? h "name=\"setup-domain\""))
+    (is (str/includes? h "公開入口"))
+    (is (not (str/includes? h "Owner · Passkey")))
+    (is (str/includes? h "この端末の Cloud Itonami で設定"))
+    (is (not (str/includes? h "sample-review-token"))
+        "the public page must not display a demonstration challenge as proof")))
+
 ;; ---------------------------------------------------------------------------
 ;; The audit gate — an unmeasured page is theater (ADR-2607132300)
 ;; ---------------------------------------------------------------------------
@@ -92,7 +104,8 @@
 (deftest portal-meets-the-hig-wcag-floor
   (let [{:keys [overall findings]}
         (dq/audit {"kaisya-console" (html)
-                   "kaisya-setup" (render/render-setup)}
+                   "kaisya-setup" (render/render-setup)
+                   "kaisya-public" (render/render-site)}
                   {:extra-axes dq/extra-axes})]
     (is (>= overall score-floor)
         (str "score " overall " — " (pr-str (mapv :axis findings))))))
@@ -109,4 +122,6 @@
   (is (= (html) (slurp render/default-out))
       "run `clojure -M:render-console` after changing the console")
   (is (= (render/render-setup) (slurp render/setup-out))
-      "run `clojure -M:render-console` after changing setup"))
+      "run `clojure -M:render-console` after changing setup")
+  (is (= (render/render-site) (slurp render/site-out))
+      "run `clojure -M:render-console` after changing the public site"))
