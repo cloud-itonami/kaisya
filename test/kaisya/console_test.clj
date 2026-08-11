@@ -71,6 +71,15 @@
     (is (str/includes? h "lang=\"ja\""))
     (is (str/includes? h "viewport"))))
 
+(deftest setup-is-a-state-of-the-same-page
+  (let [h (render/render-setup)]
+    (is (str/includes? h "会社の仕事場をつくる"))
+    (is (str/includes? h "_itonami-verification.etzhayyim.com"))
+    (is (str/includes? h "Passkey"))
+    (is (str/includes? h "DNS の書き込み権限を Cloud Itonami に渡す必要はありません"))
+    (is (not (str/includes? h "期限徒過"))
+        "setup and console are states, not two screens rendered at once")))
+
 ;; ---------------------------------------------------------------------------
 ;; The audit gate — an unmeasured page is theater (ADR-2607132300)
 ;; ---------------------------------------------------------------------------
@@ -82,7 +91,9 @@
 
 (deftest portal-meets-the-hig-wcag-floor
   (let [{:keys [overall findings]}
-        (dq/audit {"kaisya-console" (html)} {:extra-axes dq/extra-axes})]
+        (dq/audit {"kaisya-console" (html)
+                   "kaisya-setup" (render/render-setup)}
+                  {:extra-axes dq/extra-axes})]
     (is (>= overall score-floor)
         (str "score " overall " — " (pr-str (mapv :axis findings))))))
 
@@ -96,4 +107,6 @@
 
 (deftest the-checked-in-sample-matches-what-the-code-renders
   (is (= (html) (slurp render/default-out))
-      "run `clojure -M:render-console` after changing the console"))
+      "run `clojure -M:render-console` after changing the console")
+  (is (= (render/render-setup) (slurp render/setup-out))
+      "run `clojure -M:render-console` after changing setup"))
