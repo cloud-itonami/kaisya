@@ -23,7 +23,7 @@
   field is worse than one that shows nothing: it is an assurance the record
   never gave. `lawfirm.console` refuses display-only computation for the same
   reason and `cloud-itonami-app` refuses to render an unknown balance as ¥0."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def matter-keys
   "Per-matter keys the portal reads. `:name` and `:court` may be absent —

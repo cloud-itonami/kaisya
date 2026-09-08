@@ -21,7 +21,7 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
-            [clojure.string :as str]))
+            [kotoba.lang.text :as str]))
 
 (def ^:private step-elements
   "Element names that represent a step somebody performs or a decision the
