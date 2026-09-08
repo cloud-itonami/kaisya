@@ -24,7 +24,7 @@
   a portal that shows 「徒過 0」 because nobody supplied the field has invented
   an assurance."
   (:require [appkit.core :as app]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kaisya.contract :as contract]
             [kotoba-ui.core :as ui]))
 
