@@ -4,8 +4,8 @@
 `cloud-itonami/lawfirm` の事務所コンソールが「この事件で次に何をするか」に答えるのに対し、
 こちらは「回復できない失敗がどこにあるか」に答える。
 
-**成熟度: `:implemented`.** 25 tests / 56 assertions green（`clojure -M:test`）、
-`clojure -M:lint` warnings 0、レンダリング済みポータルは
+**成熟度: `:implemented`.** 25 tests / 56 assertions green（`kbb -M:test`）、
+`kbb -M:lint` warnings 0、レンダリング済みポータルは
 [design-quality](https://github.com/kotoba-lang/design-quality) の決定論的
 HIG/WCAG 監査で **100.00 / 100**。
 
@@ -45,10 +45,10 @@ Cloudflare 側に別のUser、Passkey、Organization台帳を作らない。
 | [`kaisya.demo`](src/kaisya/demo.cljk) | サンプル会社。テストとデモページが同じ記録を使う |
 
 ```bash
-clojure -M:test              # 25 tests / 56 assertions
-clojure -M:lint              # clj-kondo, errors fail
-clojure -M:emit-processes    # bpmn/*.bpmn -> resources/kaisya/processes.edn
-clojure -M:render-console    # docs/samples/kaisya-console.html を再生成
+kbb -M:test              # 25 tests / 56 assertions
+kbb -M:lint              # clj-kondo, errors fail
+kbb -M:emit-processes    # bpmn/*.bpmn -> resources/kaisya/processes.edn
+kbb -M:render-console    # docs/samples/kaisya-console.html を再生成
 ```
 
 ---

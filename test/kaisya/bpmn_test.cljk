@@ -8,7 +8,7 @@
             BPMN change that was not regenerated fails here rather than showing
             a plausible, stale process list on the portal"
     (is (= (bpmn/extract) (bpmn/checked-in))
-        "run `clojure -M:emit-processes`")))
+        "run `kbb -M:emit-processes`")))
 
 (deftest the-legal-process-is-among-them
   (let [ps (bpmn/checked-in)

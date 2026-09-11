@@ -206,7 +206,7 @@
            (ui/list-row [:span (:step/name s)]
                         {:trailing (ui/badge (name (:step/kind s)))})))])))
    [:p {:class "hig-caption1 ks-muted"}
-    "この一覧は BPMN から生成しています（`clojure -M:emit-processes`）。"
+    "この一覧は BPMN から生成しています（`kbb -M:emit-processes`）。"
     "手で書き写すと図を編集した瞬間に静かにずれます。"]))
 
 ;; ---------------------------------------------------------------------------
