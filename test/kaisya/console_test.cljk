@@ -60,7 +60,7 @@
       "app CSS is unlayered and already wins — compound selectors are dead weight"))
 
 (deftest the-only-hex-colours-are-in-the-theme-map
-  (let [src (slurp "src/kaisya/console.cljc")
+  (let [src (slurp "src/kaisya/console.cljk")
         hexes (set (re-seq #"#[0-9A-Fa-f]{6}" src))]
     (is (= #{"#2E5E4E" "#7FCBA8"} hexes)
         "status colours must come from the system palette, never from invented hex")))

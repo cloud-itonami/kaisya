@@ -39,10 +39,10 @@ Cloudflare 側に別のUser、Passkey、Organization台帳を作らない。
 
 | namespace | 役割 |
 |---|---|
-| [`kaisya.contract`](src/kaisya/contract.cljc) | practice が渡すべき形と、渡されなかったときに何が起きるか。`action-required` の並び順（回復不能なものが先）もここ |
-| [`kaisya.console`](src/kaisya/console.cljc) | ポータル本体（kotoba-ui、pure `.cljc` hiccup、SSR） |
-| [`kaisya.bpmn`](src/kaisya/bpmn.clj) | `bpmn/*.bpmn` から業務プロセス定義を**生成**する（手で書き写さない） |
-| [`kaisya.demo`](src/kaisya/demo.cljc) | サンプル会社。テストとデモページが同じ記録を使う |
+| [`kaisya.contract`](src/kaisya/contract.cljk) | practice が渡すべき形と、渡されなかったときに何が起きるか。`action-required` の並び順（回復不能なものが先）もここ |
+| [`kaisya.console`](src/kaisya/console.cljk) | ポータル本体（kotoba-ui、pure `.cljc` hiccup、SSR） |
+| [`kaisya.bpmn`](src/kaisya/bpmn.cljk) | `bpmn/*.bpmn` から業務プロセス定義を**生成**する（手で書き写さない） |
+| [`kaisya.demo`](src/kaisya/demo.cljk) | サンプル会社。テストとデモページが同じ記録を使う |
 
 ```bash
 clojure -M:test              # 25 tests / 56 assertions

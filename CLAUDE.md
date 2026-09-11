@@ -5,10 +5,10 @@
 
 ## 触る前に読むもの
 
-1. [`src/kaisya/contract.cljc`](src/kaisya/contract.cljc) の docstring —
+1. [`src/kaisya/contract.cljk`](src/kaisya/contract.cljk) の docstring —
    **なぜこのポータルが practice に依存せず、何も計算しないのか。**
    このリポジトリの仕様はここにある。
-2. [`src/kaisya/console.cljc`](src/kaisya/console.cljc) の docstring —
+2. [`src/kaisya/console.cljk`](src/kaisya/console.cljk) の docstring —
    要対応が事件一覧より前にある理由と、並び順の根拠。
 3. skill `kotoba-uiux` と `orgs/kotoba-lang/kotoba-ui/docs/agent-guide.md` —
    UI を1行でも書く前に。
@@ -43,7 +43,7 @@ clojure -M:render-console    # docs/samples/kaisya-console.html を再生成
 - **`resources/kaisya/processes.edn` を手編集しない。** 生成物。
   `bpmn_test.clj` の `processes-are-current` が抽出をやり直して突き合わせる。
 - **UI は `kotoba-ui.core` + `appkit.core` のみ require。** 生の hex はテーマ map の
-  2 色だけ（`console_test` が `src/kaisya/console.cljc` 全体を走査して検証する）。
+  2 色だけ（`console_test` が `src/kaisya/console.cljk` 全体を走査して検証する）。
   状態色は system palette トークンを使う。
 - **`bb.edn` / `.sh` を新規に置かない**（ADR-2607173000、workspace CLAUDE.md）。
   スクリプトが要るなら nbb か、この repo の慣習に合わせて `clojure -M:<alias>`。
