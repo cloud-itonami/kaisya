@@ -56,10 +56,10 @@
                        :git/sha "fb766e2f79c088de05e289554c9de049e7909bd3"}}
          :main-opts ["-m" "cognitect.test-runner"]}
 
-  ;; clojure -M:emit-processes -> resources/kaisya/processes.edn
+  ;; kbb -M:emit-processes -> resources/kaisya/processes.edn
   ;; Generated from bpmn/*.bpmn. Never hand-edited.
   :emit-processes {:main-opts ["-m" "kaisya.bpmn"]}
 
   ;; Also emits public/index.html, the deployed setup entry.
-  ;; clojure -M:render-console [out-file] -> docs/samples/kaisya-console.html
+  ;; kbb -M:render-console [out-file] -> docs/samples/kaisya-console.html
   :render-console {:main-opts ["-m" "kaisya.render-console"]}}}

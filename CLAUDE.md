@@ -16,17 +16,17 @@
 ## 開発
 
 ```bash
-clojure -M:test              # 25 tests / 56 assertions
-clojure -M:lint              # clj-kondo, errors fail, warnings 0 を維持する
-clojure -M:emit-processes    # bpmn/*.bpmn -> resources/kaisya/processes.edn
-clojure -M:render-console    # docs/samples/kaisya-console.html を再生成
+kbb -M:test              # 25 tests / 56 assertions
+kbb -M:lint              # clj-kondo, errors fail, warnings 0 を維持する
+kbb -M:emit-processes    # bpmn/*.bpmn -> resources/kaisya/processes.edn
+kbb -M:render-console    # docs/samples/kaisya-console.html を再生成
 ```
 
 - ポータルは design-quality の決定論的 HIG/WCAG 監査で **100.00** を維持する
   （`console_test.clj` の `score-floor`）。**回帰を通すために floor を下げない。**
 - `render-console` は **byte-identical across reruns** でなければならない
   （`rendering-is-deterministic`）。時刻・乱数を入れない。
-- console を変えたら `clojure -M:render-console` を回す
+- console を変えたら `kbb -M:render-console` を回す
   （`the-checked-in-sample-matches-what-the-code-renders` が落ちる）。
 
 ## この repo 固有の不変条件（破らない）
@@ -46,7 +46,7 @@ clojure -M:render-console    # docs/samples/kaisya-console.html を再生成
   2 色だけ（`console_test` が `src/kaisya/console.cljk` 全体を走査して検証する）。
   状態色は system palette トークンを使う。
 - **`bb.edn` / `.sh` を新規に置かない**（ADR-2607173000、workspace CLAUDE.md）。
-  スクリプトが要るなら nbb か、この repo の慣習に合わせて `clojure -M:<alias>`。
+  スクリプトが要るなら nbb か、この repo の慣習に合わせて `kbb -M:<alias>`。
 
 ## テストの約束
 

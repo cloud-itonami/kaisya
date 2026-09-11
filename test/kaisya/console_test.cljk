@@ -120,8 +120,8 @@
 
 (deftest the-checked-in-sample-matches-what-the-code-renders
   (is (= (html) (slurp render/default-out))
-      "run `clojure -M:render-console` after changing the console")
+      "run `kbb -M:render-console` after changing the console")
   (is (= (render/render-setup) (slurp render/setup-out))
-      "run `clojure -M:render-console` after changing setup")
+      "run `kbb -M:render-console` after changing setup")
   (is (= (render/render-site) (slurp render/site-out))
-      "run `clojure -M:render-console` after changing the public site"))
+      "run `kbb -M:render-console` after changing the public site"))
