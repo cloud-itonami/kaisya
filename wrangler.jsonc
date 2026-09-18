@@ -9,6 +9,10 @@
     {
       "pattern": "kaisya.itonami.cloud",
       "custom_domain": true
+    },
+    {
+      "pattern": "kaisya.itonami.app",
+      "custom_domain": true
     }
   ]
 }
