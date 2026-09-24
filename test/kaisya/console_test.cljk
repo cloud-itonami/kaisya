@@ -1,6 +1,6 @@
 (ns kaisya.console-test
   (:require [kotoba.lang.text :as str]
-            [clojure.test :refer [deftest is testing]]
+            [kotoba.test :refer [deftest is testing]]
             [design-quality.audit :as dq]
             [kaisya.bpmn :as bpmn]
             [kaisya.console :as console]

@@ -1,5 +1,5 @@
 (ns kaisya.contract-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kaisya.contract :as contract]
             [kaisya.demo :as demo]
             [lawfirm.demo :as lawfirm-demo]
