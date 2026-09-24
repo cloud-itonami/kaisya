@@ -18,7 +18,7 @@
   otherwise does not need. If the BPMN ever needs real structure — flows,
   gateways, conditions — replace this with a parser rather than growing the
   regex."
-  (:require [clojure.edn :as edn]
+  (:require [kotoba.lang.edn :as edn]
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
             [kotoba.lang.text :as str]))
