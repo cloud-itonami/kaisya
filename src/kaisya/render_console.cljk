@@ -6,7 +6,7 @@
   clock, no randomness — `render-console-test/rendering-is-deterministic`
   holds this, because a sample page that changes on every run cannot be
   reviewed in a diff."
-  (:require [clojure.java.io :as io]
+  (:require [kotoba.io :as io]
             [kaisya.bpmn :as bpmn]
             [kaisya.console :as console]
             [kaisya.demo :as demo]))
