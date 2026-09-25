@@ -14,6 +14,11 @@ Gftd Japan の空の会社環境です。会計仕訳、勤怠打刻、
 - `src/kaisya/operations_page.cljk`: 公開画面の生成
 - `src/kaisya/browser_app.cljs`: パスキーと会社記録の操作
 
+会社記録画面は `cloud-kotoba-dds` のテーマ、固定ヘッダー、状態表示を使い、
+ボタンは基盤の `jp-go-dds` に統一しています。`resources/jp_go_dds/dds.css` は
+依存 SHA に対応する DADS スタイルの同梱コピーです。`kbb -M:render-operations` が
+`public/css/kaisya-operations.css` と共通の操作スクリプトを生成します。
+
 ```bash
 npm ci
 npm run build

@@ -1,0 +1,1 @@
+(function(){try{var v=localStorage.getItem("kotoba-theme");if(v==='dark'||v==='light')document.documentElement.setAttribute("data-theme",v);else document.documentElement.removeAttribute("data-theme");}catch(e){}})();
