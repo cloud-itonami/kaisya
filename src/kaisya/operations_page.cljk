@@ -1,0 +1,95 @@
+(ns kaisya.operations-page
+  "Public shell for private, initially empty company records. The browser app
+  renders all returned records only after an owner passkey session is verified."
+  (:require [appkit.core :as app]
+            [kotoba-ui.core :as ui]
+            [kaisya.console :as console]
+            [kotoba.io :as io]))
+
+(defn field [id label type]
+  [:label {:for id} label
+   [:input {:id id :name id :type type :required true :autocomplete "off"}]])
+
+(defn view []
+  (ui/app-shell
+   {:nav (ui/nav-bar "kaisya" {:trailing [(ui/badge "Gftd Japan · 空の会社環境")]})}
+   (ui/hero {:title "会社の仕事場"
+             :tagline "仕訳、勤怠、台帳を一つの会社環境に記録します。最初は空です。"})
+   (ui/section {:title "パスキー" :wide true :id "auth"}
+    (app/panel
+     [[:p {:id "auth-status" :role "status"} "状態を確認しています…"]
+      [:div {:class "ks-actions"}
+       [:button {:id "register-passkey" :type "button"} "オーナー用パスキーを登録"]
+       [:button {:id "login-passkey" :type "button"} "パスキーでログイン"]]
+      [:p {:id "credential-id" :class "hig-caption1 ks-muted"}]
+      [:p {:class "hig-caption1 ks-muted"}
+       "新しく登録したパスキーは、所有者の確認後に会社データへのアクセスを有効にします。"]]))
+   [:div {:id "owner-workspace" :hidden true}
+    (ui/section {:title "記録の状態" :wide true :id "summary"}
+     (app/panel [[:p {:id "record-summary"} "読み込み中…"]
+                 [:div {:class "ks-actions"}
+                  [:button {:id "refresh-records" :type "button"} "更新"]
+                  [:button {:id "logout" :type "button"} "ログアウト"]]]))
+    (ui/section {:title "仕訳" :wide true :id "journal"}
+     (app/panel
+      [[:form {:id "journal-form"}
+        (field "journal-date" "取引日" "date")
+        (field "journal-source" "証憑・取引番号" "text")
+        (field "journal-debit" "借方科目" "text")
+        (field "journal-credit" "貸方科目" "text")
+        (field "journal-amount" "金額（円）" "number")
+        [:button {:type "submit"} "貸借を確認して記帳"]]
+       [:p {:id "journal-result" :role "status"}]
+       [:h3 "勘定科目別残高"]
+       [:ul {:id "balance-list"}]
+       [:h3 "記帳済み仕訳"]
+       [:ul {:id "journal-list"}]]))
+    (ui/section {:title "勤怠" :wide true :id "attendance"}
+     (app/panel
+      [[:form {:id "time-form"}
+        (field "time-worker" "従業員ID" "text")
+        [:label {:for "time-direction"} "打刻"
+         [:select {:id "time-direction" :name "time-direction"}
+          [:option {:value "in"} "出勤"]
+          [:option {:value "out"} "退勤"]]]
+        [:button {:type "submit"} "現在時刻で打刻"]]
+       [:p {:id "time-result" :role "status"}]
+       [:h3 "打刻履歴"]
+       [:ul {:id "time-list"}]]))
+    (ui/section {:title "台帳" :wide true :id "register"}
+     (app/panel
+      [[:form {:id "register-form"}
+        [:label {:for "register-type"} "台帳の種類"
+         [:select {:id "register-type" :name "register-type"}
+          [:option {:value "employee"} "従業員"]
+          [:option {:value "asset"} "資産"]
+          [:option {:value "obligation"} "債務・未払"]
+          [:option {:value "document"} "文書"]
+          [:option {:value "wage"} "賃金"]]]
+        (field "register-subject" "対象ID" "text")
+        (field "register-evidence" "証拠・根拠ID" "text")
+        [:label {:for "register-value"} "記録内容"
+         [:textarea {:id "register-value" :name "register-value" :required true}]]
+        [:button {:type "submit"} "台帳に追記"]]
+       [:p {:id "register-result" :role "status"}]
+       [:h3 "台帳履歴"]
+       [:ul {:id "register-list"}]]))]))
+
+(defn render []
+  (ui/->page {:title "kaisya · 会社の仕事場"
+              :description "Gftd Japan の会計、勤怠、台帳"
+              :lang "ja" :theme console/theme
+              :head [[:style (str console/app-css
+                                   ".ks-actions{display:flex;gap:1rem;flex-wrap:wrap}"
+                                   "form{display:grid;gap:.75rem;max-width:32rem}"
+                                   "label{display:grid;gap:.25rem}"
+                                   "input,select,textarea{font:inherit;padding:.6rem;border:1px solid var(--hig-color-separator);border-radius:.5rem}"
+                                   "button{cursor:pointer;padding:.6rem 1rem}")]
+                     [:script {:type "module" :src "/js/kaisya-operations.js"}]]}
+             (view)))
+
+(defn -main []
+  (let [page (render)]
+    (io/make-parents "public/operations.html")
+    (spit "public/operations.html" page)
+    (println "wrote public/operations.html")))

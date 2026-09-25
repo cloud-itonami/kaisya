@@ -1,25 +1,57 @@
-# kaisya — 会社ポータル
+# kaisya — 会社ポータルと会社記録
+
+## 会社記録（`kaisya.itonami.app`）
+
+`kaisya.itonami.app` の入口は `public/operations.html` から配信する
+Gftd Japan の空の会社環境です。会計仕訳、勤怠打刻、
+従業員・資産・債務・文書・賃金台帳を、オーナーのパスキーで保護された D1 に記録します。
+実データの移行は行いません。登録されたパスキーは管理者が本人を確認してから
+オーナーに昇格し、それまでは会社記録を閲覧できません。
+
+- `src/kaisya/operations.cljk`: 記帳・打刻・台帳の純粋な状態遷移
+- `src/kaisya/edge/http.cljk`: パスキー、所有者セッション、記録 API
+- `src/kaisya/edge/store.cljk`: D1 の版番号付き保存
+- `src/kaisya/operations_page.cljk`: 公開画面の生成
+- `src/kaisya/browser_app.cljs`: パスキーと会社記録の操作
+
+```bash
+npm ci
+npm run build
+npx wrangler d1 migrations apply cloud-itonami-kaisya-operations --remote
+npx wrangler deploy --dry-run
+npx wrangler deploy
+```
+
+この初期版は Money Forward のデータを自動移行・同期しません。銀行連携、
+給与計算、税申告、法定保存要件への適合性は未実装です。実務の全面切り替えには
+各機能の検証と既存記録の照合が必要です。
+
+---
+
+## 既存の会社ポータル
 
 事務所が**何を抱えていて、何が既に問題になっているか**を示す会社側の画面。
 `cloud-itonami/lawfirm` の事務所コンソールが「この事件で次に何をするか」に答えるのに対し、
 こちらは「回復できない失敗がどこにあるか」に答える。
 
-**成熟度: `:implemented`.** 25 tests / 56 assertions green（`kbb -M:test`）、
+**成熟度: `:implemented`.** 31 tests / 91 assertions green（`kbb -M:test`）、
 `kbb -M:lint` warnings 0、レンダリング済みポータルは
 [design-quality](https://github.com/kotoba-lang/design-quality) の決定論的
 HIG/WCAG 監査で **100.00 / 100**。
 
 - 生成済みポータル: [`docs/samples/kaisya-console.html`](docs/samples/kaisya-console.html)
 - Organization セットアップ状態: [`docs/samples/kaisya-setup.html`](docs/samples/kaisya-setup.html)
-- 公開入口: [`public/index.html`](public/index.html) → `kaisya.itonami.cloud`
+- 旧ポータルの公開入口: [`public/index.html`](public/index.html) → `kaisya.itonami.cloud`
+- 会社記録の公開入口: [`public/operations.html`](public/operations.html) → `kaisya.itonami.app`
 
-`kaisya.itonami.cloud` は同じ1ページの中で、未設定時は Organization →
+従来の `kaisya.itonami.cloud` 向け画面は、未設定時は Organization →
 ドメイン確認 → メンバー → 仕事道具の順に案内し、完了後は会社ポータルを表示する。
 ドメイン確認の authority は `cloud-itonami-app` が持ち、この repo は発行済みの
 TXT challenge と確認状態を描画するだけ。Domain Connect は DNS provider の自動設定を
 足す任意レイヤーであり、手動 TXT 確認を置き換える信頼根ではない。
-公開入口は会社ドメインを resident app の `http://localhost:1338/#settings` へ渡す。
-Cloudflare 側に別のUser、Passkey、Organization台帳を作らない。
+旧セットアップ画面は会社ドメインを resident app の
+`http://localhost:1338/#settings` へ渡す。新しい会社記録は
+`kaisya.itonami.app` のパスキーを持ち、旧ポータルの projection とは別の境界です。
 
 ---
 
@@ -45,7 +77,7 @@ Cloudflare 側に別のUser、Passkey、Organization台帳を作らない。
 | [`kaisya.demo`](src/kaisya/demo.cljk) | サンプル会社。テストとデモページが同じ記録を使う |
 
 ```bash
-kbb -M:test              # 25 tests / 56 assertions
+kbb -M:test              # 31 tests / 91 assertions
 kbb -M:lint              # clj-kondo, errors fail
 kbb -M:emit-processes    # bpmn/*.bpmn -> resources/kaisya/processes.edn
 kbb -M:render-console    # docs/samples/kaisya-console.html を再生成
@@ -119,7 +151,7 @@ kbb -M:render-console    # docs/samples/kaisya-console.html を再生成
 
 ## 既知の限界
 
-1. **HTTP の入口が無い。** サマリと承認待ちキューを渡すのはホストの仕事。
+1. **旧ポータルには HTTP の入口が無い。** サマリと承認待ちキューを渡すのはホストの仕事。
    Kotoba には現時点で ingress capability が無いため（CLAUDE.md）、
    エントリポイントは cljs 側の責務。
 2. **`:act` ボタンは何もしない。** SSR の意味論しか持たない。

@@ -19,7 +19,7 @@
   gateways, conditions — replace this with a parser rather than growing the
   regex."
   (:require [kotoba.lang.edn :as edn]
-            [clojure.java.io :as io]
+            [kotoba.io :as io]
             [kotoba.pprint :as pprint]
             [kotoba.lang.text :as str]))
 
@@ -55,21 +55,28 @@
         :when id]
     {:step/id id :step/kind kind :step/name (or (attr rest-of-tag "name") id)}))
 
+(defn- file-name [file] (.basename (js/require "node:path") file))
+
 (defn- process-of [xml file]
   (let [head (re-find #"<(?:\w+:)?process\b[^>]*>" xml)]
-    {:process/id (or (attr head "id") (str/replace (.getName (io/file file)) #"\.bpmn$" ""))
+    {:process/id (or (attr head "id") (str/replace (file-name file) #"\.bpmn$" ""))
      :process/name (or (attr head "name") "(名称なし)")
-     :process/source (str "bpmn/" (.getName (io/file file)))
+     :process/source (str "bpmn/" (file-name file))
      :process/steps (vec (elements xml))}))
 
 (defn extract
   "Every process in `bpmn/`, sorted by id so the generated file is stable."
   ([] (extract "bpmn"))
   ([dir]
-   (->> (file-seq (io/file dir))
-        (filter #(str/ends-with? (.getName ^java.io.File %) ".bpmn"))
-        (sort-by #(.getName ^java.io.File %))
-        (mapv #(process-of (slurp %) %)))))
+   (let [fs (js/require "node:fs")
+         path (js/require "node:path")]
+     (->> (.readdirSync fs dir)
+          array-seq
+          (filter #(str/ends-with? % ".bpmn"))
+          sort
+          (mapv (fn [name]
+                  (let [file (.join path dir name)]
+                    (process-of (slurp file) file))))))))
 
 (def output-path "resources/kaisya/processes.edn")
 
@@ -87,4 +94,4 @@
 (defn checked-in
   "The generated file as data, for the currency test and for the portal."
   []
-  (some-> (io/resource "kaisya/processes.edn") slurp edn/read-string))
+  (edn/read-string (slurp output-path)))
