@@ -1,4 +1,4 @@
-{:paths ["src" "resources"]
+{:paths ["src" "resources" "build/cljs"]
 
  ;; The kotoba-ui stack is this repository's only runtime dependency, and it is
  ;; the whole reason the portal exists as code rather than as a screenshot: the
@@ -11,6 +11,12 @@
  ;; sibling-checkout development, which does not resolve for a git consumer.
  ;; Top-level coordinates win over transitive ones.
  :deps {
+        io.github.kotoba-lang/cloud-kotoba-dds
+        {:git/url "https://github.com/kotoba-lang/cloud-kotoba-dds.git"
+         :git/sha "22cefcd01652a84a6b7c6bfb0ca6f0a945aa63db"}
+        io.github.kotoba-lang/jp-go-digital-design-system
+        {:git/url "https://github.com/kotoba-lang/jp-go-digital-design-system.git"
+         :git/sha "4a315c581569b8d8a60e1ceaa421d8413f35398e"}
         ;; kotoba.io replaced clojure.java.io here (2026-09-24). An explicit floor:
         ;; kotoba.io carries clojure.java.io's file/as-file/as-relative-path/
         ;; make-parents/delete-file from 98045c7, and tools.deps takes the NEWEST
@@ -49,10 +55,18 @@
          :git/sha "7fc8167c4fb97a92b7c21545e6a92a86cc58a9ca"}
         io.github.kotoba-lang/html
         {:git/url "https://github.com/kotoba-lang/html.git"
-         :git/sha "04606d97309fa377a20d18ee123e5db8f59ad127"}}
+         :git/sha "04606d97309fa377a20d18ee123e5db8f59ad127"}
+        io.github.kotoba-lang/webauthn
+        {:git/url "https://github.com/kotoba-lang/webauthn.git"
+         :git/sha "09d76979b3b723eb0f8e210698d7cc6c9ced6f64"}
+        io.github.kotoba-lang/org-chainagnostic-cacao
+        {:git/url "https://github.com/kotoba-lang/org-chainagnostic-cacao.git"
+         :git/sha "f4aa8c81f2ed223b549bf9d980d91001a13e6e63"}}
 
  :aliases
- {;; clj-kondo from deps (no binary); errors fail.
+ {:cljs {:extra-deps {org.clojure/clojurescript {:mvn/version "1.11.132"}
+                      thheller/shadow-cljs {:mvn/version "2.28.20"}}}
+  ;; clj-kondo from deps (no binary); errors fail.
   :lint {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
          :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test" "--fail-level" "error"]}
 
@@ -77,6 +91,7 @@
   ;; Generated from bpmn/*.bpmn. Never hand-edited.
   :emit-processes {:main-opts ["-m" "kaisya.bpmn"]}
 
-  ;; Also emits public/index.html, the deployed setup entry.
   ;; kbb -M:render-console [out-file] -> docs/samples/kaisya-console.html
-  :render-console {:main-opts ["-m" "kaisya.render-console"]}}}
+  :render-console {:main-opts ["-m" "kaisya.render-console"]}
+  :render-operations {:main-opts ["-m" "kaisya.operations-page"]}
+  :mirror-cljk {:main-opts ["-m" "kaisya.mirror-cljk"]}}}
