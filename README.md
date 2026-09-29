@@ -120,7 +120,7 @@ kbb -M:render-console    # docs/samples/kaisya-console.html を再生成
 ## 既知の限界
 
 1. **HTTP の入口が無い。** サマリと承認待ちキューを渡すのはホストの仕事。
-   Kotoba には現時点で ingress capability が無いため（CLAUDE.md）、
+   Kotoba には現時点で ingress capability が無いため（AGENTS.md）、
    エントリポイントは cljs 側の責務。
 2. **`:act` ボタンは何もしない。** SSR の意味論しか持たない。
 3. **BPMN は名前だけ。** フロー・ゲートウェイ・条件は抽出していない。
