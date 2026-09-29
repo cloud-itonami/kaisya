@@ -1,4 +1,4 @@
-# CLAUDE.md — kaisya
+# AGENTS.md — kaisya
 
 会社ポータル。事務所（`cloud-itonami/lawfirm`）が抱えているものを、会社側から見る画面。
 概要は [`README.md`](README.md)。
@@ -45,7 +45,7 @@ kbb -M:render-console    # docs/samples/kaisya-console.html を再生成
 - **UI は `kotoba-ui.core` + `appkit.core` のみ require。** 生の hex はテーマ map の
   2 色だけ（`console_test` が `src/kaisya/console.cljk` 全体を走査して検証する）。
   状態色は system palette トークンを使う。
-- **`bb.edn` / `.sh` を新規に置かない**（ADR-2607173000、workspace CLAUDE.md）。
+- **`bb.edn` / `.sh` を新規に置かない**（ADR-2607173000、workspace AGENTS.md）。
   スクリプトが要るなら nbb か、この repo の慣習に合わせて `kbb -M:<alias>`。
 
 ## テストの約束
