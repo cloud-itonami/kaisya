@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)"><title>kaisya · 会社の仕事場</title><meta name="description" content="Gftd Japan の会計、勤怠、台帳"><style>
+.dds-ext-container { max-width: 64rem; margin-inline: auto; padding-inline: max(1rem,env(safe-area-inset-left)) max(1rem,env(safe-area-inset-right)); }
+.dds-ext-section { padding-block: 3rem; border-top: 1px solid var(--color-neutral-solid-gray-200); }
+.dds-ext-section:first-of-type { border-top: none; }
+.dds-ext-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(var(--dds-ext-grid-min,16rem),100%),1fr)); gap: 1.5rem; }
+.dds-ext-grid>* { min-width: 0; }
+.dds-ext-stack { display: flex; flex-direction: column; gap: var(--dds-ext-stack-gap,1rem); }
+.dds-ext-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.dds-ext-card { border: 1px solid var(--color-neutral-solid-gray-200); border-radius: 12px; padding: 1.5rem; background: var(--color-neutral-white); }
+.dds-ext-hero { padding-block: 4rem 3rem; text-align: center; }
+.dds-ext-hero .dads-heading { margin: 0 0 1rem; }
+.dds-ext-center { display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; }
+.dds-ext-lead { color: var(--color-neutral-solid-gray-600); font-size: 1.125rem; line-height: 1.7; margin: 0; }
+body { margin: 0; background: var(--color-neutral-white); color: var(--color-neutral-solid-gray-800); font-family: var(--font-family-sans); }
+img,svg { max-width: 100%; height: auto; }
+.dads-table { max-width: 100%; min-width: 0; overflow-x: auto; }
+:root { color-scheme: light; }
+body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+@media (pointer:coarse) { .dads-button,.dads-accordion__summary,.dads-menu-list-box__opener { min-height: 44px; } }
+@media (max-width:48rem) { .dds-ext-section { padding-block: 2rem; } .dds-ext-hero { padding-block: 2.5rem 2rem; } .dds-ext-grid { --dds-ext-grid-min: 100%; } }
+</style><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark"><script src="/js/theme.js"></script><link rel="stylesheet" href="/css/kaisya-operations.css"><script src="/js/shinkansen.js" defer></script><script src="/js/behavior.js" defer></script><script src="/js/shell.js" defer></script><script src="/js/switch.js" defer></script><script src="/js/menu.js" defer></script><script src="/js/status.js" defer></script><script type="module" src="/js/kaisya-operations.js"></script></head>
+  <body>
+    <a class="dads-visually-hidden" href="#main">本文へ</a>
+    <div class="kaisya-operations">
+      <header class="ck-topbar" data-chrome="top">
+        <div class="ck-topbar__section">
+          <span>kaisya</span>
+        </div>
+        <div class="ck-topbar__actions">
+          <span>Gftd Japan</span>
+        </div>
+      </header>
+      <main id="main" class="kaisya-operations__main">
+        <h1>会計・勤怠・台帳</h1>
+        <p>空の会社環境から記録を始めます。</p>
+        <section class="kaisya-section" id="auth">
+          <h2>パスキー</h2>
+          <div class="kaisya-panel">
+            <p class="ck-status" role="status" aria-live="polite" data-ck-status="line" aria-label="ログイン状態" id="auth-status"></p>
+            <div class="ks-actions">
+              <button class="dads-button" data-type="solid-fill" data-size="md" id="login-passkey" type="button">パスキーでログイン</button>
+              <button class="dads-button" data-type="outline" data-size="md" id="register-passkey" type="button">新しいパスキーを登録</button>
+            </div>
+            <p id="credential-id" class="hig-caption1 ks-muted"></p>
+            <details class="ks-muted">
+              <summary>新しいパスキーについて</summary>
+              <p>登録後、所有者の確認を経て会社データへアクセスできます。</p>
+            </details>
+          </div>
+        </section>
+        <div id="owner-workspace" hidden>
+          <nav class="kaisya-task-nav" aria-label="会社の作業">
+            <a href="#journal">仕訳</a>
+            <a href="#attendance">勤怠</a>
+            <a href="#register">台帳</a>
+          </nav>
+          <section class="kaisya-section" id="summary">
+            <h2>記録の状態</h2>
+            <div class="kaisya-panel">
+              <p id="record-summary">読み込み中…</p>
+              <div class="ks-actions">
+                <button class="dads-button" data-type="outline" data-size="md" id="refresh-records" type="button">更新</button>
+                <button class="dads-button" data-type="text" data-size="md" id="logout" type="button">ログアウト</button>
+              </div>
+            </div>
+          </section>
+          <section class="kaisya-section" id="journal">
+            <h2>仕訳</h2>
+            <div class="kaisya-panel">
+              <form id="journal-form">
+                <label for="journal-date">取引日<input id="journal-date" name="journal-date" type="date" required autocomplete="off"></label>
+                <label for="journal-source">証憑・取引番号<input id="journal-source" name="journal-source" type="text" required autocomplete="off"></label>
+                <label for="journal-debit">借方科目<input id="journal-debit" name="journal-debit" type="text" required autocomplete="off"></label>
+                <label for="journal-credit">貸方科目<input id="journal-credit" name="journal-credit" type="text" required autocomplete="off"></label>
+                <label for="journal-amount">金額（円）<input id="journal-amount" name="journal-amount" type="number" required autocomplete="off"></label>
+                <button class="dads-button" data-type="solid-fill" data-size="md" type="submit">貸借を確認して記帳</button>
+              </form>
+              <p class="ck-status" role="status" aria-live="polite" data-ck-status="line" aria-label="記帳結果" id="journal-result"></p>
+              <details>
+                <summary>勘定科目別残高</summary>
+                <ul id="balance-list"></ul>
+              </details>
+              <details>
+                <summary>記帳済み仕訳</summary>
+                <ul id="journal-list"></ul>
+              </details>
+            </div>
+          </section>
+          <section class="kaisya-section" id="attendance">
+            <h2>勤怠</h2>
+            <div class="kaisya-panel">
+              <form id="time-form">
+                <label for="time-worker">従業員ID<input id="time-worker" name="time-worker" type="text" required autocomplete="off"></label>
+                <label for="time-direction">打刻<select id="time-direction" name="time-direction">
+                  <option value="in">出勤</option>
+                  <option value="out">退勤</option>
+                </select></label>
+                <button class="dads-button" data-type="solid-fill" data-size="md" type="submit">現在時刻で打刻</button>
+              </form>
+              <p class="ck-status" role="status" aria-live="polite" data-ck-status="line" aria-label="打刻結果" id="time-result"></p>
+              <details>
+                <summary>打刻履歴</summary>
+                <ul id="time-list"></ul>
+              </details>
+            </div>
+          </section>
+          <section class="kaisya-section" id="register">
+            <h2>台帳</h2>
+            <div class="kaisya-panel">
+              <form id="register-form">
+                <label for="register-type">台帳の種類<select id="register-type" name="register-type">
+                  <option value="employee">従業員</option>
+                  <option value="asset">資産</option>
+                  <option value="obligation">債務・未払</option>
+                  <option value="document">文書</option>
+                  <option value="wage">賃金</option>
+                </select></label>
+                <label for="register-subject">対象ID<input id="register-subject" name="register-subject" type="text" required autocomplete="off"></label>
+                <label for="register-evidence">証拠・根拠ID<input id="register-evidence" name="register-evidence" type="text" required autocomplete="off"></label>
+                <label for="register-value">記録内容<textarea id="register-value" name="register-value" required></textarea></label>
+                <button class="dads-button" data-type="solid-fill" data-size="md" type="submit">台帳に追記</button>
+              </form>
+              <p class="ck-status" role="status" aria-live="polite" data-ck-status="line" aria-label="台帳の保存結果" id="register-result"></p>
+              <details>
+                <summary>台帳履歴</summary>
+                <ul id="register-list"></ul>
+              </details>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

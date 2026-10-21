@@ -1,0 +1,13 @@
+{:deps {:aliases [:cljs]}
+ :builds
+ {:edge-api
+  {:target :esm
+   :output-dir "dist/edge"
+   :modules {:kaisya-edge-core
+             {:exports {default kaisya.edge.http/worker}}}
+   :compiler-options {:output-feature-set :es2020 :infer-externs :auto}}
+  :browser-app
+  {:target :browser
+   :output-dir "public/js"
+   :modules {:kaisya-operations {:entries [kaisya.browser-app]}}
+   :compiler-options {:infer-externs :auto}}}}

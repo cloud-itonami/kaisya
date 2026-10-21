@@ -1,0 +1,84 @@
+(ns kaisya.operations-test
+  (:require [kotoba.test :refer [deftest is testing]]
+            [kaisya.operations :as ops]))
+
+(def base (ops/empty-company "gftd-japan"))
+(def envelope {:organization-id "gftd-japan" :actor "did:key:owner"
+               :at "2026-09-25T16:00:00+09:00"})
+
+(defn command [id kind body]
+  (merge envelope {:id id :kind kind} body))
+
+(deftest journal-preserves-double-entry-and-source-identity
+  (let [entry (command "j1" :journal/post
+                       {:date "2026-09-25" :source-id "bank-123"
+                        :lines [{:account "普通預金" :side :credit :amount-yen 50000}
+                                {:account "未払金" :side :debit :amount-yen 50000}]})
+        posted (ops/apply-command base entry)
+        state (:state posted)]
+    (is (:ok posted))
+    (is (= 0 (reduce + (vals (ops/trial-balance state)))))
+    (is (= -50000 (get (ops/trial-balance state) "普通預金")))
+    (is (= :duplicate-source
+           (:reason (ops/apply-command state (assoc entry :id "j2")))))
+    (is (= :invalid-envelope (:reason (ops/apply-command state entry))))
+    (is (= :unbalanced-or-invalid-lines
+           (:reason (ops/apply-command base
+                                       (assoc-in entry [:lines 1 :amount-yen] 49999)))))
+    (is (= :invalid-date
+           (:reason (ops/apply-command base (assoc entry :date "2026-02-30")))))
+    (let [reversed (ops/apply-command state
+                                       (command "j3" :journal/reverse
+                                                {:date "2026-09-26" :reverses-id "j1"}))]
+      (is (:ok reversed))
+      (is (= 0 (get (ops/trial-balance (:state reversed)) "普通預金")))
+      (is (= :already-reversed
+             (:reason (ops/apply-command (:state reversed)
+                                         (command "j4" :journal/reverse
+                                                  {:date "2026-09-26" :reverses-id "j1"}))))))))
+
+(deftest closed-period-refuses-backdated-posting
+  (let [closed (:state (ops/apply-command base
+                                           (command "c1" :journal/close
+                                                    {:through "2026-08-31"})))
+        entry (command "j1" :journal/post
+                       {:date "2026-08-31" :source-id "receipt-1"
+                        :lines [{:account "費用" :side :debit :amount-yen 1}
+                                {:account "普通預金" :side :credit :amount-yen 1}]})]
+    (is (= :period-closed (:reason (ops/apply-command closed entry))))
+    (is (= 1 (count (:audit closed))))
+    (is (empty? (:journal closed)))))
+
+(deftest punches-keep-anomalies-as-evidence
+  (let [out (:state (ops/apply-command base
+                                        (command "p1" :time/punch
+                                                 {:worker-id "w1" :direction :out
+                                                  :instant-ms 1000000})))
+        start (:state (ops/apply-command base
+                                          (command "p2" :time/punch
+                                                   {:worker-id "w1" :direction :in
+                                                    :instant-ms 1000000})))
+        complete (:state (ops/apply-command start
+                                             (command "p3" :time/punch
+                                                      {:worker-id "w1" :direction :out
+                                                       :instant-ms 4600000})))]
+    (is (= 1 (count (:punches out))))
+    (is (= :unmatched-clock-out (:reason (ops/worked-minutes out "w1"))))
+    (is (= :unmatched-clock-in (:reason (ops/worked-minutes start "w1"))))
+    (is (= {:ok true :duration-ms 3600000 :minutes 60}
+           (ops/worked-minutes complete "w1")))
+    (let [short-shift (:state (ops/apply-command start
+                                               (command "p4" :time/punch
+                                                        {:worker-id "w1" :direction :out
+                                                         :instant-ms 1030000})))]
+      (is (= 0.5 (:minutes (ops/worked-minutes short-shift "w1")))))))
+
+(deftest registry-requires-evidence-and-tenant-scope
+  (let [record (command "r1" :register/append
+                        {:register-type :obligation :subject-id "vendor-1"
+                         :evidence-id "invoice-1" :value {:amount-yen 1000}})]
+    (is (:ok (ops/apply-command base record)))
+    (is (= :invalid-register-record
+           (:reason (ops/apply-command base (dissoc record :evidence-id)))))
+    (is (= :invalid-envelope
+           (:reason (ops/apply-command base (assoc record :organization-id "other")))))))

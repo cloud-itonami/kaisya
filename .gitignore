@@ -4,5 +4,8 @@ target/
 .DS_Store
 node_modules/
 dist/
+build/
+.shadow-cljs/
+public/js/manifest.edn
 .wrangler/
 .nbb/

@@ -1,0 +1,35 @@
+(ns kaisya.mirror-cljk
+  "Make browser-compiler mirrors of three pinned, CLJS-only .cljk sources.
+  The ClojureScript compiler resolves .cljs/.cljc, while Kotoba dependencies
+  deliberately use .cljk. Mirrors are generated from the resolved git pins,
+  never maintained as independent security code."
+  (:require [kotoba.lang.text :as str]))
+
+(def fs (js/require "node:fs"))
+(def path (js/require "node:path"))
+(def child (js/require "node:child_process"))
+
+(def required
+  ["webauthn/adapters/edge.cljk"
+   "webauthn/der.cljk"
+   "cacao/edge/cbor.cljk"])
+
+(defn- source-for [classpath relative]
+  (some (fn [root]
+          (let [candidate (.join path root relative)]
+            (when (.existsSync fs candidate) candidate)))
+        classpath))
+
+(defn -main []
+  (let [classpath (str/split
+                   (str/trim
+                    (.toString (.execFileSync child "clojure" #js ["-Spath"])))
+                   (js/RegExp. ":"))]
+    (doseq [relative required]
+      (let [source (source-for classpath relative)
+            target (.join path "build/cljs" (str/replace relative #"\.cljk$" ".cljs"))]
+        (when-not source
+          (throw (js/Error. (str "Pinned source missing: " relative))))
+        (.mkdirSync fs (.dirname path target) #js {:recursive true})
+        (.copyFileSync fs source target)
+        (println (str "mirrored " relative))))))

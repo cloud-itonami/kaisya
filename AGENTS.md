@@ -3,6 +3,11 @@
 会社ポータル。事務所（`cloud-itonami/lawfirm`）が抱えているものを、会社側から見る画面。
 概要は [`README.md`](README.md)。
 
+`kaisya.itonami.app` の会社記録は新しい独立した機能です。
+以下の投影不変条件は `kaisya.console` と旧ポータルに適用し、
+記帳・勤怠・台帳の状態遷移は `kaisya.operations` が所有します。
+会社記録には本人確認済みオーナーのパスキーが必要です。
+
 ## 触る前に読むもの
 
 1. [`src/kaisya/contract.cljk`](src/kaisya/contract.cljk) の docstring —
@@ -16,7 +21,7 @@
 ## 開発
 
 ```bash
-kbb -M:test              # 25 tests / 56 assertions
+kbb -M:test              # 31 tests / 91 assertions
 kbb -M:lint              # clj-kondo, errors fail, warnings 0 を維持する
 kbb -M:emit-processes    # bpmn/*.bpmn -> resources/kaisya/processes.edn
 kbb -M:render-console    # docs/samples/kaisya-console.html を再生成

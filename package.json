@@ -4,11 +4,12 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "kbb -M:render-console",
+    "build": "kbb -M:render-console && kbb -M:render-operations && kbb -M:mirror-cljk && shadow-cljs compile edge-api && shadow-cljs release browser-app",
     "dry-run": "npm run build && wrangler deploy --dry-run --outdir dist",
     "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
-    "wrangler": "4.120.1"
+    "wrangler": "4.120.1",
+    "shadow-cljs": "2.28.20"
   }
 }
