@@ -15,53 +15,76 @@
         {:git/url "https://github.com/kotoba-lang/cloud-kotoba-dds.git"
          :git/sha "22cefcd01652a84a6b7c6bfb0ca6f0a945aa63db"}
         io.github.kotoba-lang/jp-go-digital-design-system
-        {:git/url "https://github.com/kotoba-lang/jp-go-digital-design-system.git"
-         :git/sha "4a315c581569b8d8a60e1ceaa421d8413f35398e"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.jpGoDigitalDesignSystem"}
         ;; kotoba.io replaced clojure.java.io here (2026-09-24). An explicit floor:
         ;; kotoba.io carries clojure.java.io's file/as-file/as-relative-path/
         ;; make-parents/delete-file from 98045c7, and tools.deps takes the NEWEST
         ;; sha it is shown.
-        io.github.kotoba-lang/io {:git/sha "1b60ca825c1e705bd195f857ca4549133653a9f3"}
+        io.github.kotoba-lang/io
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.io"}
         ;; kotoba.pprint replaced clojure.pprint here (2026-09-24): the same
         ;; bytes (cljs.pprint transcribed). An explicit floor; tools.deps takes the
         ;; NEWEST sha it is shown.
-        io.github.kotoba-lang/pprint {:git/sha "5c9d4aea71d6caac529fffcf361aba0f87ee485e"}
+        io.github.kotoba-lang/pprint
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.pprint"}
         ;; kotoba.lang.edn replaced clojure.edn here (2026-09-23). An explicit floor:
         ;; tools.deps takes the NEWEST sha it is shown, and kbb resolves git deps
         ;; only from nbb.edn, so every project file this repo has names it.
-        io.github.kotoba-lang/edn {:git/sha "79dba32c8892058842c57783f06a2dfe4601aeb0"}
+        io.github.kotoba-lang/edn
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.edn"}
        ;; kotoba.test (clojure.test-compatible surface), not clojure.test --
         ;; scripts/migrate-clojure-test-to-kotoba-test.cljk. Explicit floor.
-        io.github.kotoba-lang/test {:git/url "https://github.com/kotoba-lang/test.git"
-                                    :git/sha "2ab4885f99fd25552d380d0f6b0b54c5a72eb7ae"}
+        io.github.kotoba-lang/test
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.test"}
         ;; kotoba.lang.text, not clojure.string. Pinned as an explicit floor:
         ;; tools.deps takes the NEWEST sha it is shown, so without a floor here
         ;; this repo silently rides whatever a sibling happens to name.
-        io.github.kotoba-lang/text {:git/sha "73bdb13ae7a3d004b44bca08be03a3191157a38f"}
+        io.github.kotoba-lang/text
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.text"}
        io.github.kotoba-lang/kotoba-ui
-        {:git/url "https://github.com/kotoba-lang/kotoba-ui.git"
-         :git/sha "4167b3aa911690368bb47b61e825c47d3327bfac"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.kotobaUi"}
         io.github.kotoba-lang/appkit
-        {:git/url "https://github.com/kotoba-lang/appkit.git"
-         :git/sha "03b1c5373817229060f3fac9e41e97775c320997"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.appkit"}
         io.github.kotoba-lang/shitsuke
-        {:git/url "https://github.com/kotoba-lang/shitsuke.git"
-         :git/sha "8820801bbf52d47a31be9521a193f9bc5359a39e"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.shitsuke"}
         io.github.kotoba-lang/liquid-glass-ui
-        {:git/url "https://github.com/kotoba-lang/liquid-glass-ui.git"
-         :git/sha "8bb2c4fa10c06e638e38e55bff1b7f36830f2766"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.liquidGlassUi"}
         io.github.kotoba-lang/css
-        {:git/url "https://github.com/kotoba-lang/css.git"
-         :git/sha "7fc8167c4fb97a92b7c21545e6a92a86cc58a9ca"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.css"}
         io.github.kotoba-lang/html
-        {:git/url "https://github.com/kotoba-lang/html.git"
-         :git/sha "04606d97309fa377a20d18ee123e5db8f59ad127"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.html"}
         io.github.kotoba-lang/webauthn
-        {:git/url "https://github.com/kotoba-lang/webauthn.git"
-         :git/sha "09d76979b3b723eb0f8e210698d7cc6c9ced6f64"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.webauthn"}
         io.github.kotoba-lang/org-chainagnostic-cacao
-        {:git/url "https://github.com/kotoba-lang/org-chainagnostic-cacao.git"
-         :git/sha "f4aa8c81f2ed223b549bf9d980d91001a13e6e63"}}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/org.chainagnostic.cacao"}}
 
  :aliases
  {:cljs {:extra-deps {org.clojure/clojurescript {:mvn/version "1.11.132"}
@@ -83,8 +106,9 @@
                       {:git/url "https://github.com/cloud-itonami/lawfirm.git"
                        :git/sha "eb816888680868edb319446e3c37953a808e6a7b"}
                       io.github.kotoba-lang/design-quality
-                      {:git/url "https://github.com/kotoba-lang/design-quality.git"
-                       :git/sha "fb766e2f79c088de05e289554c9de049e7909bd3"}}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "7e1dbe0aece831138e6106c59d2b26375d0f60c4"
+         :deps/root "lib/kotoba.designQuality"}}
          :main-opts ["-m" "cognitect.test-runner"]}
 
   ;; kbb -M:emit-processes -> resources/kaisya/processes.edn
